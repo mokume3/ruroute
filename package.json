@@ -1,0 +1,40 @@
+{
+  "name": "ruroute",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "A starter for creating a TypeScript package.",
+  "author": "mokume3 <mokume.dev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/mokume3/ruroute#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mokume3/ruroute.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mokume3/ruroute/issues"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check --write",
+    "release": "bumpp",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "bumpp": "^11.1.0",
+    "tsdown": "^0.22.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
