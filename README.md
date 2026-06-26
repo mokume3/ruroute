@@ -1,23 +1,32 @@
-# tsdown-starter
+# ruroute
 
-A starter for creating a TypeScript package.
+テンプレート文字列から型安全に URL を構築するライブラリです。
+
+## Usage
+
+```ts
+import { createRuroute } from "ruroute";
+
+const ruroute = createRuroute();
+
+const route = ruroute("app://start/:id?tab#section").types<{
+  id: string;
+  tab?: string;
+  section: string;
+}>();
+
+const url = route({
+  id: "42",
+  tab: "profile",
+  section: "overview",
+});
+```
 
 ## Development
 
-- Install dependencies:
-
 ```bash
-npm install
-```
-
-- Run the unit tests:
-
-```bash
-npm run test
-```
-
-- Build the library:
-
-```bash
-npm run build
+pnpm build
+pnpm test
+pnpm typecheck
+pnpm check
 ```

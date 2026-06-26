@@ -24,6 +24,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest",
+    "bench": "vitest bench",
+    "bench:report": "vitest bench --reporter=json --outputFile=./bench-report.json",
     "typecheck": "tsc --noEmit",
     "check": "biome check --write",
     "release": "bumpp",
