@@ -30,9 +30,12 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
     "@types/node": "^26.0.1",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
     "bumpp": "^11.1.0",
+    "knip": "^6.21.0",
+    "lefthook": "^2.1.9",
     "tsdown": "^0.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
