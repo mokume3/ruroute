@@ -1,24 +1,24 @@
 # ruroute
 
-ruroute is a TypeScript-first URL builder that turns template strings into strongly typed route functions.
+ruroute は、テンプレート文字列から型安全なルート関数を生成する TypeScript 向け URL ビルダーです。
 
-Japanese README: [README.JP.md](./README.JP.md)
+English README: [README.md](./README.md)
 
-## Features
+## 特徴
 
-- Strong template-to-params type checking
-- Automatic URL encoding for path, query, and hash values
-- Optional query parameters supported
-- Supports both `?query#hash` and `#hash?query` template order
-- Works with custom schemes and regular paths
+- テンプレートとパラメータの強力な型チェック
+- パス・クエリ・ハッシュ値の自動 URL エンコード
+- オプショナルなクエリパラメータに対応
+- `?query#hash` と `#hash?query` の両方の順序に対応
+- カスタムスキームと通常のパスの両方で利用可能
 
-## Installation
+## インストール
 
 ```bash
 pnpm add ruroute
 ```
 
-## Quick Start
+## クイックスタート
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -40,13 +40,13 @@ const url = userRoute({
 // /users/42?tab=profile#overview
 ```
 
-## Template Syntax
+## テンプレート構文
 
-- Path parameter: `:name`
-- Query keys: `?key1&key2`
-- Hash key: `#hashKey`
+- パスパラメータ: `:name`
+- クエリキー: `?key1&key2`
+- ハッシュキー: `#hashKey`
 
-Examples:
+例:
 
 - `/users/:id`
 - `/search?keyword&page`
@@ -54,9 +54,9 @@ Examples:
 - `app://start/:id?tab#section`
 - `app://start#section?tab`
 
-## Usage Patterns (TypeScript)
+## 使用パターン (TypeScript)
 
-### 1. Path + Query + Hash
+### 1. パス + クエリ + ハッシュ
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -79,9 +79,9 @@ const url = route({
 // app://start/value1/www/value2?query1=123#overview
 ```
 
-### 2. Optional Query Parameters
+### 2. オプショナルクエリ
 
-If a query value is `undefined`, the key is omitted.
+クエリ値が `undefined` の場合、そのキーは出力に含まれません。
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -95,9 +95,9 @@ route({ keyword: "hello world" });
 // /search?keyword=hello%20world
 ```
 
-### 3. Hash Before Query (`#...?...`)
+### 3. ハッシュ先行 (`#...?...`)
 
-The output preserves the template order.
+出力順はテンプレートの順序を維持します。
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -112,7 +112,7 @@ route({ hash: "section", query1: "tab top" });
 // app://start#section?query1=tab%20top
 ```
 
-### 4. Static Routes
+### 4. 静的ルート
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -127,7 +127,7 @@ route({});
 // /about
 ```
 
-### 5. Reusable Route Collection
+### 5. 再利用可能なルート定義
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -146,11 +146,11 @@ const userUrl = routes.user({ id: "u_1" });
 const postUrl = routes.post({ postId: "p_1", preview: true });
 ```
 
-## Type Safety Notes
+## 型安全に関する補足
 
-- Path and hash parameters must be present and typed as `string` in `.types<T>()`.
-- Query keys in the template must exist in `T`.
-- Query values can be `string | number | boolean | undefined` at runtime.
+- パスとハッシュのパラメータは必須で、`.types<T>()` 上では `string` である必要があります。
+- テンプレート上のクエリキーは `T` に含まれている必要があります。
+- 実行時のクエリ値は `string | number | boolean | undefined` を受け付けます。
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -161,24 +161,24 @@ const route = createRuroute()("/users/:id?tab#section").types<{
   section: string;
 }>();
 
-// @ts-expect-error - Missing required path parameter
+// @ts-expect-error - 必須パスパラメータ不足
 route({ tab: "profile", section: "overview" });
 
-// @ts-expect-error - Missing hash parameter
+// @ts-expect-error - ハッシュパラメータ不足
 route({ id: "42", tab: "profile" });
 ```
 
-## Runtime Behavior
+## 実行時の挙動
 
-- Missing required path/hash values throw an error.
-- Duplicate template keys print a warning in non-production environments.
-- Wildcard path (`*`) and optional path syntax (`:id?`) are not supported.
+- 必須のパス/ハッシュ値が不足している場合はエラーを throw します。
+- テンプレートに重複キーがある場合、非 production 環境で警告を出します。
+- ワイルドカードパス (`*`) とオプショナルパス構文 (`:id?`) は非対応です。
 
 ## API
 
 ### `createRuroute(options?)`
 
-Creates a route factory.
+ルートファクトリを作成します。
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -186,9 +186,9 @@ import { createRuroute } from "ruroute";
 const ruroute = createRuroute();
 ```
 
-#### Options
+#### オプション
 
-- `prefix?: string` — Prepends a string to all relative paths (ignored for scheme-based URLs)
+- `prefix?: string` — 相対パスの先頭に文字列を付与します（スキーム付き URL では無視されます）
 
 ```ts
 import { createRuroute } from "ruroute";
@@ -202,13 +202,13 @@ userRoute({ id: "42" });
 
 ### `ruroute(template).types<T>()`
 
-Compiles a template and returns a function:
+テンプレートをコンパイルし、次の関数を返します。
 
 ```ts
 (params: T) => string
 ```
 
-## Development
+## 開発
 
 ```bash
 pnpm build
