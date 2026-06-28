@@ -2,7 +2,12 @@
   "name": "ruroute",
   "type": "module",
   "version": "0.0.1",
-  "description": "A starter for creating a TypeScript package.",
+  "description": "A type-safe URL builder",
+  "keywords": [
+    "url",
+    "route",
+    "builder"
+  ],
   "author": "mokume3 <mokume.dev@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/mokume3/ruroute#readme",
