@@ -1,16 +1,6 @@
 {
-  "entry": [
-    "src/index.ts"
-  ],
-  "project": [
-    "src/**/*.ts"
-  ],
-  "ignore": [
-    "**/*.d.ts",
-    "**/fixtures"
-  ],
-  "ignoreDependencies": [
-    "hidden-package",
-    "@typescript/native-preview"
-  ]
+  "entry": ["src/index.ts"],
+  "project": ["src/**/*.ts"],
+  "ignore": ["**/*.d.ts", "**/fixtures"],
+  "ignoreDependencies": ["hidden-package", "@typescript/native-preview"]
 }
