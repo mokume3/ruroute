@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createRuroute } from "../src";
 
-interface EmptyRouteParams {
-  [key: string]: never;
-}
-
 describe("createRuroute", () => {
   const ruroute = createRuroute();
 
@@ -95,7 +91,7 @@ describe("createRuroute", () => {
   });
 
   it("静的パスのみのテンプレートはそのまま返す", () => {
-    const route = ruroute("/about").types<EmptyRouteParams>();
+    const route = ruroute("/about").types();
     expect(route({})).toBe("/about");
   });
 
@@ -106,5 +102,67 @@ describe("createRuroute", () => {
     }>();
 
     expect(route({ keyword: "hello world" })).toBe("/search?keyword=hello%20world");
+  });
+});
+
+describe("createRuroute with prefix", () => {
+  it("prefixオプションでパスの先頭に文字列を付与できる", () => {
+    const ruroute = createRuroute({ prefix: "/api" });
+    const route = ruroute("/users/:id").types<{ id: string }>();
+
+    expect(route({ id: "42" })).toBe("/api/users/42");
+  });
+
+  it("prefixなしでも動作する（後方互換性）", () => {
+    const ruroute = createRuroute();
+    const route = ruroute("/users/:id").types<{ id: string }>();
+
+    expect(route({ id: "42" })).toBe("/users/42");
+  });
+
+  it("prefixでクエリパラメータも含むURLが生成できる", () => {
+    const ruroute = createRuroute({ prefix: "/api/v1" });
+    const route = ruroute("/search?keyword&page").types<{
+      keyword: string;
+      page?: number;
+    }>();
+
+    expect(route({ keyword: "hello" })).toBe("/api/v1/search?keyword=hello");
+    expect(route({ keyword: "hello", page: 2 })).toBe("/api/v1/search?keyword=hello&page=2");
+  });
+
+  it("prefixでハッシュを含むURLが生成できる", () => {
+    const ruroute = createRuroute({ prefix: "/docs" });
+    const route = ruroute("/guide/:id#section").types<{ id: string; section: string }>();
+
+    expect(route({ id: "intro", section: "overview" })).toBe("/docs/guide/intro#overview");
+  });
+
+  it("prefixでハッシュ・クエリの複雑なURLが生成できる", () => {
+    const ruroute = createRuroute({ prefix: "/api" });
+    const route = ruroute("/posts/:id?tab#section").types<{
+      id: string;
+      tab?: string;
+      section: string;
+    }>();
+
+    expect(route({ id: "1", section: "comments" })).toBe("/api/posts/1#comments");
+    expect(route({ id: "1", tab: "edit", section: "comments" })).toBe(
+      "/api/posts/1?tab=edit#comments",
+    );
+  });
+
+  it("スキーム付きテンプレートではprefixは反映されない", () => {
+    const ruroute = createRuroute({ prefix: "/api" });
+    const route = ruroute("app://start/:id").types<{ id: string }>();
+
+    expect(route({ id: "42" })).toBe("app://start/42");
+  });
+
+  it("空文字列のprefixは何も付与しない", () => {
+    const ruroute = createRuroute({ prefix: "" });
+    const route = ruroute("/users/:id").types<{ id: string }>();
+
+    expect(route({ id: "42" })).toBe("/users/42");
   });
 });

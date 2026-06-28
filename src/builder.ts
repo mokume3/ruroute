@@ -38,10 +38,12 @@ const appendQueryString = (
 
 export const buildUrlFn = <T extends BuildableRouteParams>(
   compiledTemplateMeta: CompiledTemplateMeta,
+  prefix: string = "",
 ): ((params: T) => string) => {
   return (params: T): string => {
     const pathSegments = compiledTemplateMeta.pathSegments;
-    let builtUrl = "";
+    const shouldApplyPrefix = prefix && !compiledTemplateMeta.hasScheme;
+    let builtUrl = shouldApplyPrefix ? prefix : "";
     let pathSegmentIndex = 0;
 
     while (pathSegmentIndex < pathSegments.length) {

@@ -13,6 +13,7 @@ export interface CompiledTemplateMeta {
   queryKeys: string[];
   hashKey: string | undefined;
   hashBeforeQuery: boolean;
+  hasScheme: boolean;
 }
 
 interface ParsedTemplateParts {
@@ -174,6 +175,7 @@ const splitQueryKeys = (queryPart: string): string[] => {
 };
 
 export const parseTemplate = (template: string): CompiledTemplateMeta => {
+  const hasScheme = template.includes("://");
   const parsedTemplateParts = parseTemplateParts(template);
   const pathSegments = splitPathSegments(parsedTemplateParts.pathPart);
   const queryKeys = splitQueryKeys(parsedTemplateParts.queryPart);
@@ -188,5 +190,6 @@ export const parseTemplate = (template: string): CompiledTemplateMeta => {
     queryKeys,
     hashKey: parsedTemplateParts.hashPart === EMPTY_TEXT ? undefined : parsedTemplateParts.hashPart,
     hashBeforeQuery: parsedTemplateParts.hashBeforeQuery,
+    hasScheme,
   };
 };

@@ -24,6 +24,14 @@
       "quoteStyle": "double"
     }
   },
+  "overrides": [
+    {
+      "includes": ["cspell.json"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {
