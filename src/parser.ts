@@ -2,6 +2,7 @@ import {
   EMPTY_TEXT,
   HASH_PREFIX,
   PATH_PARAMETER_PREFIX,
+  PATH_PARAMETER_SEGMENT_INTERVAL,
   PATH_SEPARATOR,
   QUERY_PREFIX,
   QUERY_SEPARATOR,
@@ -25,8 +26,26 @@ interface DuplicateTracker {
   [key: string]: boolean | undefined;
 }
 
-const warnForDuplicateKey = (categoryName: string, duplicateKey: string): void => {
-  console.warn(`[ruroute] Duplicate ${categoryName} key detected: "${duplicateKey}"`);
+const warnForDuplicateKeys = (
+  categoryName: string,
+  keys: string[],
+  startIndex: number,
+  step: number,
+): void => {
+  const seenKeys: DuplicateTracker = Object.create(null);
+  let keyIndex = startIndex;
+
+  while (keyIndex < keys.length) {
+    const key = keys[keyIndex];
+
+    if (seenKeys[key]) {
+      console.warn(`[ruroute] Duplicate ${categoryName} key detected: "${key}"`);
+    } else {
+      seenKeys[key] = true;
+    }
+
+    keyIndex += step;
+  }
 };
 
 const parseTemplateParts = (template: string): ParsedTemplateParts => {
@@ -93,7 +112,6 @@ const splitPathSegments = (pathPart: string): string[] => {
   }
 
   const pathSegments: string[] = [];
-  const duplicatePathParameterTracker: DuplicateTracker = Object.create(null);
   let pathCursor = 0;
   let staticStartIndex = 0;
 
@@ -117,12 +135,6 @@ const splitPathSegments = (pathPart: string): string[] => {
         throw new Error('[ruroute] Optional path parameter syntax ":param?" is not supported.');
       }
 
-      if (duplicatePathParameterTracker[pathParameter]) {
-        warnForDuplicateKey("path parameter", pathParameter);
-      } else {
-        duplicatePathParameterTracker[pathParameter] = true;
-      }
-
       pathSegments.push(pathParameter);
       staticStartIndex = pathCursor;
       continue;
@@ -141,7 +153,6 @@ const splitQueryKeys = (queryPart: string): string[] => {
   }
 
   const queryKeys: string[] = [];
-  const duplicateQueryKeyTracker: DuplicateTracker = Object.create(null);
   let queryStartIndex = 0;
   let queryCursor = 0;
 
@@ -150,12 +161,6 @@ const splitQueryKeys = (queryPart: string): string[] => {
       const queryKey = queryPart.slice(queryStartIndex, queryCursor);
 
       if (queryKey !== EMPTY_TEXT) {
-        if (duplicateQueryKeyTracker[queryKey]) {
-          warnForDuplicateKey("query parameter", queryKey);
-        } else {
-          duplicateQueryKeyTracker[queryKey] = true;
-        }
-
         queryKeys.push(queryKey);
       }
 
@@ -170,10 +175,17 @@ const splitQueryKeys = (queryPart: string): string[] => {
 
 export const parseTemplate = (template: string): CompiledTemplateMeta => {
   const parsedTemplateParts = parseTemplateParts(template);
+  const pathSegments = splitPathSegments(parsedTemplateParts.pathPart);
+  const queryKeys = splitQueryKeys(parsedTemplateParts.queryPart);
+
+  if (process.env.NODE_ENV !== "production") {
+    warnForDuplicateKeys("path parameter", pathSegments, 1, PATH_PARAMETER_SEGMENT_INTERVAL);
+    warnForDuplicateKeys("query parameter", queryKeys, 0, 1);
+  }
 
   return {
-    pathSegments: splitPathSegments(parsedTemplateParts.pathPart),
-    queryKeys: splitQueryKeys(parsedTemplateParts.queryPart),
+    pathSegments,
+    queryKeys,
     hashKey: parsedTemplateParts.hashPart === EMPTY_TEXT ? undefined : parsedTemplateParts.hashPart,
     hashBeforeQuery: parsedTemplateParts.hashBeforeQuery,
   };

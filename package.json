@@ -26,7 +26,7 @@
     "test": "vitest",
     "bench": "vitest bench",
     "bench:report": "vitest bench --reporter=json --outputFile=./bench-report.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "check": "biome check --write",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build"
