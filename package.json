@@ -1,7 +1,7 @@
 {
   "name": "ruroute",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A type-safe URL builder",
   "keywords": [
     "typescript",
@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^26.0.1",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
     "@vitest/coverage-v8": "^4.1.9",
