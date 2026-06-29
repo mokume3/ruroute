@@ -25,8 +25,7 @@
 
 ```bash
 pnpm test # テストを実行
-pnpm check # biomeチェックを実行
-pnpm typecheck # 型チェックを実行
+pnpm check # 型チェック / biomeチェックを実行
 ```
 
 ## 開発手順
@@ -36,7 +35,8 @@ pnpm typecheck # 型チェックを実行
 
 ### テスト前にビルド
 
-`pnpm build` は `pnpm test` または `pnpm check` を実行する前に完了している必要があります。ソースファイルを変更した後は、必ずテストを実行する前にビルドしてください。
+`pnpm build` は `pnpm test` , `pnpm fix` , `pnpm exec knip` を実行する前に完了している必要があります。  
+ソースファイルを変更した後は、必ずテストを実行する前にビルドしてください。
 
 ### 主要コマンド一覧
 
@@ -46,11 +46,13 @@ pnpm typecheck # 型チェックを実行
 - **ビルド**: `pnpm build`
 - **開発監視**: `pnpm dev` - パッケージを監視
 - **テスト**: `pnpm test` - テストを実行 (Vitest)
-- **型チェック**: `pnpm typecheck` - tsc
-- **Lint/フォーマット**: `pnpm check` - biomeチェック
+- **型チェック/Lint/フォーマット**: `pnpm check` - tsc / biome check
+- **型チェック/Lint/フォーマット 確定**: `pnpm fix` - tsc / biome check --write
+- **不要処理削除**: `pnpm exec knip` - 未使用のコードを削除するためのツール
 
 ## パフォーマンス
 
+- 必須: Minifyしたバンドルサイズは 2KB 未満にしてください。
 - 必須: `for`/`while`ループと文字列連結のホットパスは保持してください。`map`/`filter`/`reduce`/`join`、または配列スプレッド（`push(...arr)`）は、呼び出しごとのコードでは絶対に使用しないでください。
 - 必須: `Object.entries`/`Object.keys`/spread/`Object.fromEntries`は、初期化時（設定構築時）のみに制限してください。呼び出しごとのコードでは絶対に使用しないでください。
 - 必須: LRU/ルックアップマップには `Object.create(null)` を使用し、頻繁に使用されるパスでは `Map` に「近代化」しないこと。

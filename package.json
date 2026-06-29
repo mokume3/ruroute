@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "description": "A type-safe URL builder",
   "keywords": [
+    "typescript",
     "url",
     "route",
     "builder"
@@ -28,11 +29,11 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "vitest",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
     "bench": "vitest bench",
-    "bench:report": "vitest bench --reporter=json --outputFile=./bench-report.json",
-    "typecheck": "tsgo --noEmit",
-    "check": "biome check --write",
+    "check": "tsgo --noEmit && biome check",
+    "fix": "tsgo --noEmit && biome check --write",
     "release": "bumpp",
     "prepublishOnly": "pnpm run build"
   },
@@ -40,6 +41,7 @@
     "@biomejs/biome": "^2.5.1",
     "@types/node": "^26.0.1",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "@vitest/coverage-v8": "^4.1.9",
     "bumpp": "^11.1.0",
     "knip": "^6.23.0",
     "lefthook": "^2.1.9",
