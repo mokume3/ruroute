@@ -77,6 +77,17 @@ describe("parseTemplate", () => {
     });
   });
 
+  it("空のクエリ要素は無視する", () => {
+    const meta = parseTemplate("/search?keyword&&page&");
+
+    expect(meta).toMatchObject({
+      pathSegments: ["/search"],
+      queryKeys: ["keyword", "page"],
+      hashKey: undefined,
+      hashBeforeQuery: false,
+    });
+  });
+
   it("複数ハッシュは最初の#以降を1つのハッシュ文字列として扱う", () => {
     const meta = parseTemplate("app://start#hash1#hash2");
 
@@ -92,5 +103,14 @@ describe("parseTemplate", () => {
     expect(() => parseTemplate("/files/*")).toThrowError(
       '[ruroute] Wildcard "*" in path is not supported.',
     );
+  });
+
+  it("ハッシュキーが既存キーと重複していても警告を出す", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    parseTemplate("/posts/:section#section");
+
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

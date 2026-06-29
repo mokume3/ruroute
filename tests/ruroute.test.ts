@@ -103,6 +103,22 @@ describe("createRuroute", () => {
 
     expect(route({ keyword: "hello world" })).toBe("/search?keyword=hello%20world");
   });
+
+  it("必須のパスパラメータが未指定ならエラーになる", () => {
+    const route = ruroute("/users/:id").types<{ id: string }>();
+
+    expect(() => route(undefined as never)).toThrowError(
+      "[ruroute] Missing required path value: id",
+    );
+  });
+
+  it("必須のハッシュパラメータが未指定ならエラーになる", () => {
+    const route = ruroute("/guide/:id#section").types<{ id: string; section: string }>();
+
+    expect(() => route({ id: "intro" } as never)).toThrowError(
+      "[ruroute] Missing required hash value: section",
+    );
+  });
 });
 
 describe("createRuroute with prefix", () => {
