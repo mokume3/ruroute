@@ -1,3 +1,2 @@
-export const encodeUrlValue = (value: string | number | boolean): string => {
-  return encodeURIComponent(String(value));
-};
+export const encodeUrlValue = (value: string | number | boolean): string =>
+  encodeURIComponent(String(value));

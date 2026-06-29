@@ -1,195 +1,109 @@
 import {
-  EMPTY_TEXT,
-  HASH_PREFIX,
-  PATH_PARAMETER_PREFIX,
-  PATH_PARAMETER_SEGMENT_INTERVAL,
+  HASH_START,
+  PATH_PARAM_PREFIX,
   PATH_SEPARATOR,
-  QUERY_PREFIX,
   QUERY_SEPARATOR,
+  QUERY_START,
+  WILDCARD,
 } from "./constants";
+import type { RouteMeta } from "./types";
 
-export interface CompiledTemplateMeta {
-  pathSegments: string[];
-  queryKeys: string[];
-  hashKey: string | undefined;
-  hashBeforeQuery: boolean;
-  hasScheme: boolean;
-}
+export const parseTemplate = (template: string): RouteMeta => {
+  const firstHash = template.indexOf(HASH_START);
+  const firstQuery = template.indexOf(QUERY_START);
 
-interface ParsedTemplateParts {
-  pathPart: string;
-  queryPart: string;
-  hashPart: string;
-  hashBeforeQuery: boolean;
-}
+  let pathPart = template;
+  let queryPart = "";
+  let hashPart: string | undefined;
+  let hashBeforeQuery = false;
 
-interface DuplicateTracker {
-  [key: string]: boolean | undefined;
-}
-
-const warnForDuplicateKeys = (
-  categoryName: string,
-  keys: string[],
-  startIndex: number,
-  step: number,
-): void => {
-  const seenKeys: DuplicateTracker = Object.create(null);
-  let keyIndex = startIndex;
-
-  while (keyIndex < keys.length) {
-    const key = keys[keyIndex];
-
-    if (seenKeys[key]) {
-      console.warn(`[ruroute] Duplicate ${categoryName} key detected: "${key}"`);
+  if (firstHash !== -1 && firstQuery !== -1) {
+    if (firstHash < firstQuery) {
+      hashBeforeQuery = true;
+      pathPart = template.slice(0, firstHash);
+      hashPart = template.slice(firstHash + 1, firstQuery);
+      queryPart = template.slice(firstQuery + 1);
     } else {
-      seenKeys[key] = true;
+      pathPart = template.slice(0, firstQuery);
+      queryPart = template.slice(firstQuery + 1, firstHash);
+      hashPart = template.slice(firstHash + 1);
     }
-
-    keyIndex += step;
-  }
-};
-
-const parseTemplateParts = (template: string): ParsedTemplateParts => {
-  const queryIndex = template.indexOf(QUERY_PREFIX);
-  const hashIndex = template.indexOf(HASH_PREFIX);
-  const hasQuery = queryIndex >= 0;
-  const hasHash = hashIndex >= 0;
-
-  if (!hasQuery && !hasHash) {
-    return {
-      pathPart: template,
-      queryPart: EMPTY_TEXT,
-      hashPart: EMPTY_TEXT,
-      hashBeforeQuery: false,
-    };
+  } else if (firstQuery !== -1) {
+    pathPart = template.slice(0, firstQuery);
+    queryPart = template.slice(firstQuery + 1);
+  } else if (firstHash !== -1) {
+    pathPart = template.slice(0, firstHash);
+    hashPart = template.slice(firstHash + 1);
   }
 
-  if (hasQuery && (!hasHash || queryIndex < hashIndex)) {
-    const pathPart = template.slice(0, queryIndex);
-    const queryWithHashPart = template.slice(queryIndex + QUERY_PREFIX.length);
-    const hashPartIndex = queryWithHashPart.indexOf(HASH_PREFIX);
-
-    if (hashPartIndex < 0) {
-      return {
-        pathPart,
-        queryPart: queryWithHashPart,
-        hashPart: EMPTY_TEXT,
-        hashBeforeQuery: false,
-      };
-    }
-
-    return {
-      pathPart,
-      queryPart: queryWithHashPart.slice(0, hashPartIndex),
-      hashPart: queryWithHashPart.slice(hashPartIndex + HASH_PREFIX.length),
-      hashBeforeQuery: false,
-    };
-  }
-
-  const pathPart = template.slice(0, hashIndex);
-  const hashWithQueryPart = template.slice(hashIndex + HASH_PREFIX.length);
-  const queryPartIndex = hashWithQueryPart.indexOf(QUERY_PREFIX);
-
-  if (queryPartIndex < 0) {
-    return {
-      pathPart,
-      queryPart: EMPTY_TEXT,
-      hashPart: hashWithQueryPart,
-      hashBeforeQuery: false,
-    };
-  }
-
-  return {
-    pathPart,
-    queryPart: hashWithQueryPart.slice(queryPartIndex + QUERY_PREFIX.length),
-    hashPart: hashWithQueryPart.slice(0, queryPartIndex),
-    hashBeforeQuery: true,
-  };
-};
-
-const splitPathSegments = (pathPart: string): string[] => {
-  if (pathPart.includes("*")) {
+  if (pathPart.indexOf(WILDCARD) !== -1) {
     throw new Error('[ruroute] Wildcard "*" in path is not supported.');
   }
 
+  const seen = Object.create(null);
+  let hasDuplicate = false;
+
   const pathSegments: string[] = [];
-  let pathCursor = 0;
-  let staticStartIndex = 0;
-
-  while (pathCursor < pathPart.length) {
-    const isPathParameterPrefix =
-      pathPart[pathCursor] === PATH_PARAMETER_PREFIX && pathPart[pathCursor + 1] !== PATH_SEPARATOR;
-
-    if (isPathParameterPrefix) {
-      pathSegments.push(pathPart.slice(staticStartIndex, pathCursor));
-      pathCursor += 1;
-
-      const parameterStartIndex = pathCursor;
-
-      while (pathCursor < pathPart.length && pathPart[pathCursor] !== PATH_SEPARATOR) {
-        pathCursor += 1;
+  const length = pathPart.length;
+  let literalStart = 0;
+  let index = 0;
+  while (index < length) {
+    if (pathPart[index] === PATH_PARAM_PREFIX && pathPart[index + 1] !== PATH_SEPARATOR) {
+      pathSegments.push(pathPart.slice(literalStart, index));
+      const nameStart = index + 1;
+      let nameEnd = nameStart;
+      while (nameEnd < length && pathPart[nameEnd] !== PATH_SEPARATOR) {
+        nameEnd++;
       }
-
-      const pathParameter = pathPart.slice(parameterStartIndex, pathCursor);
-
-      if (pathParameter.endsWith(QUERY_PREFIX)) {
-        throw new Error('[ruroute] Optional path parameter syntax ":param?" is not supported.');
+      const name = pathPart.slice(nameStart, nameEnd);
+      if (seen[name]) {
+        hasDuplicate = true;
+      } else {
+        seen[name] = true;
       }
-
-      pathSegments.push(pathParameter);
-      staticStartIndex = pathCursor;
-      continue;
+      pathSegments.push(name);
+      literalStart = nameEnd;
+      index = nameEnd;
+    } else {
+      index++;
     }
-
-    pathCursor += 1;
   }
-
-  pathSegments.push(pathPart.slice(staticStartIndex));
-  return pathSegments;
-};
-
-const splitQueryKeys = (queryPart: string): string[] => {
-  if (queryPart === EMPTY_TEXT) {
-    return [];
+  if (pathSegments.length > 0) {
+    pathSegments.push(pathPart.slice(literalStart));
+  } else {
+    pathSegments.push(pathPart);
   }
 
   const queryKeys: string[] = [];
-  let queryStartIndex = 0;
-  let queryCursor = 0;
-
-  while (queryCursor <= queryPart.length) {
-    if (queryCursor === queryPart.length || queryPart[queryCursor] === QUERY_SEPARATOR) {
-      const queryKey = queryPart.slice(queryStartIndex, queryCursor);
-
-      if (queryKey !== EMPTY_TEXT) {
-        queryKeys.push(queryKey);
+  if (queryPart.length > 0) {
+    let keyStart = 0;
+    const queryLength = queryPart.length;
+    for (let charIndex = 0; charIndex <= queryLength; charIndex++) {
+      if (charIndex === queryLength || queryPart[charIndex] === QUERY_SEPARATOR) {
+        const key = queryPart.slice(keyStart, charIndex);
+        if (key.length > 0) {
+          if (seen[key]) {
+            hasDuplicate = true;
+          } else {
+            seen[key] = true;
+          }
+          queryKeys.push(key);
+        }
+        keyStart = charIndex + 1;
       }
-
-      queryStartIndex = queryCursor + 1;
     }
-
-    queryCursor += 1;
   }
 
-  return queryKeys;
-};
-
-export const parseTemplate = (template: string): CompiledTemplateMeta => {
-  const hasScheme = template.includes("://");
-  const parsedTemplateParts = parseTemplateParts(template);
-  const pathSegments = splitPathSegments(parsedTemplateParts.pathPart);
-  const queryKeys = splitQueryKeys(parsedTemplateParts.queryPart);
-
-  if (process.env.NODE_ENV !== "production") {
-    warnForDuplicateKeys("path parameter", pathSegments, 1, PATH_PARAMETER_SEGMENT_INTERVAL);
-    warnForDuplicateKeys("query parameter", queryKeys, 0, 1);
+  const hashKey = hashPart && hashPart.length > 0 ? hashPart : undefined;
+  if (hashKey) {
+    if (seen[hashKey]) {
+      hasDuplicate = true;
+    }
   }
 
-  return {
-    pathSegments,
-    queryKeys,
-    hashKey: parsedTemplateParts.hashPart === EMPTY_TEXT ? undefined : parsedTemplateParts.hashPart,
-    hashBeforeQuery: parsedTemplateParts.hashBeforeQuery,
-    hasScheme,
-  };
+  if (hasDuplicate) {
+    console.warn(`[ruroute] Duplicate parameter keys in template: ${template}`);
+  }
+
+  return { pathSegments, queryKeys, hashKey, hashBeforeQuery };
 };

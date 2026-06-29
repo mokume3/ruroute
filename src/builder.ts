@@ -1,103 +1,61 @@
-import { HASH_PREFIX, PATH_PARAMETER_SEGMENT_INTERVAL, QUERY_PREFIX } from "./constants";
-import type { CompiledTemplateMeta } from "./parser";
+import { HASH_START, QUERY_ASSIGN, QUERY_SEPARATOR, QUERY_START } from "./constants";
+import { parseTemplate } from "./parser";
+import type { CreateRurouteOptions, QueryValue, RurouteFactory, RurouteTemplate } from "./types";
 import { encodeUrlValue } from "./utils/encode-url-value";
 
-interface BuildableRouteParams {
-  [key: string]: string | number | boolean | undefined;
-}
+export const createRuroute = (options?: CreateRurouteOptions): RurouteFactory => {
+  const prefix = options?.prefix ?? "";
 
-const EMPTY_ROUTE_PARAMS: BuildableRouteParams = Object.create(null);
+  const factory = (template: string): RurouteTemplate<string> => {
+    const meta = parseTemplate(template);
+    const segments = meta.pathSegments;
+    const segmentCount = segments.length;
+    const queryKeys = meta.queryKeys;
+    const queryCount = queryKeys.length;
+    const hashKey = meta.hashKey;
+    const hashBeforeQuery = meta.hashBeforeQuery;
+    const hasScheme = segments[0].indexOf("://") !== -1;
+    const pathPrefix = hasScheme ? "" : prefix;
 
-const appendQueryString = (
-  sourceUrl: string,
-  queryKeys: string[],
-  params: BuildableRouteParams,
-): string => {
-  let builtUrl = sourceUrl;
-  let isFirstQueryParam = true;
-  let queryKeyIndex = 0;
-
-  while (queryKeyIndex < queryKeys.length) {
-    const queryKey = queryKeys[queryKeyIndex];
-    const queryValue = params[queryKey];
-
-    if (queryValue !== undefined) {
-      if (isFirstQueryParam) {
-        builtUrl += QUERY_PREFIX;
-        isFirstQueryParam = false;
-      } else {
-        builtUrl += "&";
-      }
-
-      builtUrl += `${queryKey}=${encodeUrlValue(queryValue)}`;
-    }
-
-    queryKeyIndex += 1;
-  }
-
-  return builtUrl;
-};
-
-export const buildUrlFn = <T extends BuildableRouteParams>(
-  compiledTemplateMeta: CompiledTemplateMeta,
-  prefix: string = "",
-): ((...params: [T] extends [Record<string, never>] ? [] : [params: T]) => string) => {
-  return (...params: [T] extends [Record<string, never>] ? [] : [params: T]): string => {
-    const routeParams: BuildableRouteParams = params[0] ?? EMPTY_ROUTE_PARAMS;
-    const pathSegments = compiledTemplateMeta.pathSegments;
-    const shouldApplyPrefix = prefix && !compiledTemplateMeta.hasScheme;
-    let builtUrl = shouldApplyPrefix ? prefix : "";
-    let pathSegmentIndex = 0;
-
-    while (pathSegmentIndex < pathSegments.length) {
-      const pathSegment = pathSegments[pathSegmentIndex];
-      const isStaticPathSegment = pathSegmentIndex % PATH_PARAMETER_SEGMENT_INTERVAL === 0;
-
-      if (isStaticPathSegment) {
-        builtUrl += pathSegment;
-      } else {
-        const pathParameterValue = routeParams[pathSegment];
-
-        if (pathParameterValue === undefined) {
-          throw new Error(`[ruroute] Missing required path parameter: "${pathSegment}"`);
+    const build = (params?: Record<string, QueryValue | undefined>): string => {
+      let path = pathPrefix;
+      for (let index = 0; index < segmentCount; index++) {
+        if ((index & 1) === 0) {
+          path += segments[index];
+        } else {
+          const name = segments[index];
+          const value = params?.[name];
+          if (value === undefined) {
+            throw new Error(`[ruroute] Missing required path value: ${name}`);
+          }
+          path += encodeUrlValue(value);
         }
-
-        builtUrl += encodeUrlValue(pathParameterValue);
       }
 
-      pathSegmentIndex += 1;
-    }
-
-    if (compiledTemplateMeta.hashBeforeQuery) {
-      if (compiledTemplateMeta.hashKey !== undefined) {
-        const hashValue = routeParams[compiledTemplateMeta.hashKey];
-
-        if (hashValue === undefined) {
-          throw new Error(
-            `[ruroute] Missing required hash parameter: "${compiledTemplateMeta.hashKey}"`,
-          );
+      let query = "";
+      for (let index = 0; index < queryCount; index++) {
+        const key = queryKeys[index];
+        const value = params?.[key];
+        if (value !== undefined) {
+          query += query.length > 0 ? QUERY_SEPARATOR : QUERY_START;
+          query += key + QUERY_ASSIGN + encodeUrlValue(value);
         }
-
-        builtUrl += `${HASH_PREFIX}${encodeUrlValue(hashValue)}`;
       }
 
-      return appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, routeParams);
-    }
-
-    builtUrl = appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, routeParams);
-
-    if (compiledTemplateMeta.hashKey !== undefined) {
-      const hashValue = routeParams[compiledTemplateMeta.hashKey];
-
-      if (hashValue === undefined) {
-        throw new Error(
-          `[ruroute] Missing required hash parameter: "${compiledTemplateMeta.hashKey}"`,
-        );
+      let hash = "";
+      if (hashKey !== undefined) {
+        const value = params?.[hashKey];
+        if (value === undefined) {
+          throw new Error(`[ruroute] Missing required hash value: ${hashKey}`);
+        }
+        hash = HASH_START + encodeUrlValue(value);
       }
 
-      builtUrl += `${HASH_PREFIX}${encodeUrlValue(hashValue)}`;
-    }
+      return hashBeforeQuery ? path + hash + query : path + query + hash;
+    };
 
-    return builtUrl;
+    return { types: () => build } as RurouteTemplate<string>;
   };
+
+  return factory as RurouteFactory;
 };

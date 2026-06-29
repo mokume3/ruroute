@@ -1,89 +1,65 @@
-type SplitScheme<Template extends string> = Template extends `${infer Scheme}://${infer Rest}`
-  ? { scheme: `${Scheme}://`; rest: Rest }
-  : { scheme: ""; rest: Template };
+export type QueryValue = string | number | boolean;
 
-type ExtractParts<Template extends string> =
-  Template extends `${infer Path}#${infer Hash}?${infer Query}`
-    ? { path: Path; query: Query; hash: Hash }
-    : Template extends `${infer Path}?${infer Query}#${infer Hash}`
-      ? { path: Path; query: Query; hash: Hash }
-      : Template extends `${infer Path}?${infer Query}`
-        ? { path: Path; query: Query; hash: never }
-        : Template extends `${infer Path}#${infer Hash}`
-          ? { path: Path; query: never; hash: Hash }
-          : { path: Template; query: never; hash: never };
+export type RurouteFactory = <Template extends string>(
+  template: Template,
+) => RurouteTemplate<Template>;
 
-type ExtractPathParams<Path extends string> =
-  Path extends `${string}:${infer Parameter}/${infer Rest}`
-    ? Parameter | ExtractPathParams<`/${Rest}`>
-    : Path extends `${string}:${infer Parameter}`
-      ? Parameter
-      : never;
+export interface CreateRurouteOptions {
+  prefix?: string;
+}
 
-type ExtractQueryParams<Query extends string> = Query extends `${infer Parameter}&${infer Rest}`
-  ? Parameter | ExtractQueryParams<Rest>
-  : Query extends ""
-    ? never
+export interface RouteMeta {
+  pathSegments: string[];
+  queryKeys: string[];
+  hashKey: string | undefined;
+  hashBeforeQuery: boolean;
+}
+
+export interface RurouteTemplate<Template> {
+  types(): HasParams<Template> extends false ? () => string : never;
+  types<
+    Params extends RouteParamsOf<Template> &
+      Record<Exclude<keyof RouteParamsOf<Template>, keyof Params>, never> &
+      Record<Exclude<keyof Params, keyof RouteParamsOf<Template>>, never>,
+  >(): (params: Params) => string;
+}
+
+type RouteParamsOf<Template> =
+  Section<Template> extends {
+    path: infer Path;
+    query: infer Query;
+    hash: infer Hash;
+  }
+    ? { [Key in PathParamKeys<Path> & string]: string } & {
+        [Key in QueryParamKeys<Query> & string]?: QueryValue;
+      } & { [Key in HashParamKey<Hash> & string]: string }
+    : never;
+
+type RemoveScheme<Template> = Template extends `${string}://${infer Rest}` ? Rest : Template;
+
+type Section<Template> =
+  RemoveScheme<Template> extends `${infer Before}#${infer After}`
+    ? After extends `${infer Hash}?${infer Query}`
+      ? { path: Before; query: Query; hash: Hash }
+      : Before extends `${infer Path}?${infer Query}`
+        ? { path: Path; query: Query; hash: After }
+        : { path: Before; query: ""; hash: After }
+    : RemoveScheme<Template> extends `${infer Before}?${infer Query}`
+      ? { path: Before; query: Query; hash: "" }
+      : { path: RemoveScheme<Template>; query: ""; hash: "" };
+
+type PathParamKeys<Path> = Path extends `${string}:${infer Rest}`
+  ? Rest extends `${infer Name}/${infer After}`
+    ? Name | PathParamKeys<After>
+    : Rest
+  : never;
+
+type QueryParamKeys<Query> = Query extends ""
+  ? never
+  : Query extends `${infer Key}&${infer Rest}`
+    ? Key | QueryParamKeys<Rest>
     : Query;
 
-type ValidatePathParams<Path extends string, T> = {
-  [ParameterName in ExtractPathParams<Path>]: ParameterName extends keyof T
-    ? undefined extends T[ParameterName]
-      ? "Error: Path parameters cannot be optional"
-      : T[ParameterName] extends string
-        ? T[ParameterName]
-        : "Error: Path parameter must be string"
-    : "Error: Missing path parameter";
-};
+type HashParamKey<Hash> = Hash extends "" ? never : Hash;
 
-type ValidateQueryParams<Query extends string, T> = [Query] extends [never]
-  ? unknown
-  : Exclude<ExtractQueryParams<Query>, keyof T> extends never
-    ? unknown
-    : {
-        [MissingQueryParameter in Exclude<
-          ExtractQueryParams<Query>,
-          keyof T
-        >]: "Error: Missing query parameter";
-      };
-
-type ValidateHashParam<Hash, T> = [Hash] extends [never]
-  ? unknown
-  : {
-      [HashName in Hash & string]: HashName extends keyof T
-        ? undefined extends T[HashName]
-          ? "Error: Hash parameter cannot be optional"
-          : T[HashName] extends string
-            ? T[HashName]
-            : "Error: Hash parameter must be string"
-        : "Error: Missing hash parameter";
-    };
-
-type ValidateUnexpectedParams<AllowedKeys extends PropertyKey, T> =
-  Exclude<keyof T, AllowedKeys> extends never
-    ? unknown
-    : {
-        [UnexpectedKey in Exclude<
-          keyof T,
-          AllowedKeys
-        >]: `Error: Unexpected route parameter: "${UnexpectedKey & string}"`;
-      };
-
-export type ValidateTypes<Template extends string, T> =
-  SplitScheme<Template> extends {
-    rest: infer Rest extends string;
-  }
-    ? ExtractParts<Rest> extends {
-        path: infer Path extends string;
-        query: infer Query extends string;
-        hash: infer Hash;
-      }
-      ? ValidatePathParams<Path, T> &
-          ValidateQueryParams<Query, T> &
-          ValidateHashParam<Hash, T> &
-          ValidateUnexpectedParams<
-            ExtractPathParams<Path> | ExtractQueryParams<Query> | (Hash & string),
-            T
-          >
-      : never
-    : never;
+type HasParams<Template> = keyof RouteParamsOf<Template> extends never ? false : true;
