@@ -71,3 +71,20 @@ routeFactory("app://start/:param1").types<{
 routeFactory("app://start#hash").types<{
   hash: number;
 }>();
+
+// @ts-expect-error テンプレートにない追加キーは許可しない
+routeFactory("/posts/:id?tab").types<{
+  id: string;
+  tab?: string;
+  section: string;
+}>();
+
+// @ts-expect-error テンプレート側にあるクエリパラメータがtypesにない
+routeFactory("/search?keyword&page").types<{
+  keyword: string;
+}>();
+
+// @ts-expect-error テンプレート側にあるハッシュパラメータがtypesにない
+routeFactory("/guide/:id#section").types<{
+  id: string;
+}>();

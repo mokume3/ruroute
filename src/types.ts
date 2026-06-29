@@ -59,6 +59,16 @@ type ValidateHashParam<Hash, T> = [Hash] extends [never]
         : "Error: Missing hash parameter";
     };
 
+type ValidateUnexpectedParams<AllowedKeys extends PropertyKey, T> =
+  Exclude<keyof T, AllowedKeys> extends never
+    ? unknown
+    : {
+        [UnexpectedKey in Exclude<
+          keyof T,
+          AllowedKeys
+        >]: `Error: Unexpected route parameter: "${UnexpectedKey & string}"`;
+      };
+
 export type ValidateTypes<Template extends string, T> =
   SplitScheme<Template> extends {
     rest: infer Rest extends string;
@@ -68,6 +78,12 @@ export type ValidateTypes<Template extends string, T> =
         query: infer Query extends string;
         hash: infer Hash;
       }
-      ? ValidatePathParams<Path, T> & ValidateQueryParams<Query, T> & ValidateHashParam<Hash, T>
+      ? ValidatePathParams<Path, T> &
+          ValidateQueryParams<Query, T> &
+          ValidateHashParam<Hash, T> &
+          ValidateUnexpectedParams<
+            ExtractPathParams<Path> | ExtractQueryParams<Query> | (Hash & string),
+            T
+          >
       : never
     : never;
