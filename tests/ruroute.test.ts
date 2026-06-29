@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createRuroute } from "../src";
+import { createRuroute, ruroute } from "../src";
 
 describe("createRuroute", () => {
   const ruroute = createRuroute();
@@ -92,7 +92,7 @@ describe("createRuroute", () => {
 
   it("静的パスのみのテンプレートはそのまま返す", () => {
     const route = ruroute("/about").types();
-    expect(route({})).toBe("/about");
+    expect(route()).toBe("/about");
   });
 
   it("パス + クエリのみのテンプレートでURLを生成できる", () => {
@@ -164,5 +164,19 @@ describe("createRuroute with prefix", () => {
     const route = ruroute("/users/:id").types<{ id: string }>();
 
     expect(route({ id: "42" })).toBe("/users/42");
+  });
+});
+
+describe("ruroute", () => {
+  it("createRurouteの既定インスタンスとして使える", () => {
+    const route = ruroute("app://start#hash?query1&query2").types<{
+      hash: string;
+      query1: string;
+      query2?: number;
+    }>();
+
+    expect(route({ hash: "section", query1: "tab top" })).toBe(
+      "app://start#section?query1=tab%20top",
+    );
   });
 });

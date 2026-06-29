@@ -21,9 +21,7 @@ pnpm add ruroute
 ## Quick Start
 
 ```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute();
+import { ruroute } from "ruroute";
 
 const userRoute = ruroute("/users/:id?tab#section").types<{
   id: string;
@@ -59,9 +57,9 @@ Examples:
 ### 1. Path + Query + Hash
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("app://start/:param1/www/:param2?query1&query2#hash").types<{
+const route = ruroute("app://start/:param1/www/:param2?query1&query2#hash").types<{
   param1: string;
   param2: string;
   query1: number;
@@ -84,9 +82,9 @@ const url = route({
 If a query value is `undefined`, the key is omitted.
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("/search?keyword&page").types<{
+const route = ruroute("/search?keyword&page").types<{
   keyword: string;
   page?: number;
 }>();
@@ -97,12 +95,12 @@ route({ keyword: "hello world" });
 
 ### 3. Hash Before Query (`#...?...`)
 
-The output preserves the template order.
+The output preserves the template order. This also supports SPA-style routes where the hash comes before the query string.
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("app://start#hash?query1&query2").types<{
+const route = ruroute("app://start#hash?query1&query2").types<{
   hash: string;
   query1: string;
   query2?: number;
@@ -115,24 +113,18 @@ route({ hash: "section", query1: "tab top" });
 ### 4. Static Routes
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-interface EmptyRouteParams {
-  [key: string]: never;
-}
+const route = ruroute("/about").types();
 
-const route = createRuroute()("/about").types<EmptyRouteParams>();
-
-route({});
+route();
 // /about
 ```
 
 ### 5. Reusable Route Collection
 
 ```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute();
+import { ruroute } from "ruroute";
 
 const routes = {
   user: ruroute("/users/:id").types<{ id: string }>(),
@@ -153,9 +145,9 @@ const postUrl = routes.post({ postId: "p_1", preview: true });
 - Query values can be `string | number | boolean | undefined` at runtime.
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("/users/:id?tab#section").types<{
+const route = ruroute("/users/:id?tab#section").types<{
   id: string;
   tab?: string;
   section: string;
@@ -198,6 +190,16 @@ const ruroute = createRuroute({ prefix: "/api/v1" });
 const userRoute = ruroute("/users/:id").types<{ id: string }>();
 userRoute({ id: "42" });
 // → "/api/v1/users/42"
+```
+
+### `ruroute`
+
+This is the default `createRuroute()` instance. Import it directly when you do not need options.
+
+```ts
+import { ruroute } from "ruroute";
+
+const userRoute = ruroute("/users/:id").types<{ id: string }>();
 ```
 
 ### `ruroute(template).types<T>()`

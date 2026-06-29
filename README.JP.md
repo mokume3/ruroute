@@ -21,9 +21,7 @@ pnpm add ruroute
 ## クイックスタート
 
 ```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute();
+import { ruroute } from "ruroute";
 
 const userRoute = ruroute("/users/:id?tab#section").types<{
   id: string;
@@ -59,9 +57,9 @@ const url = userRoute({
 ### 1. パス + クエリ + ハッシュ
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("app://start/:param1/www/:param2?query1&query2#hash").types<{
+const route = ruroute("app://start/:param1/www/:param2?query1&query2#hash").types<{
   param1: string;
   param2: string;
   query1: number;
@@ -84,9 +82,9 @@ const url = route({
 クエリ値が `undefined` の場合、そのキーは出力に含まれません。
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("/search?keyword&page").types<{
+const route = ruroute("/search?keyword&page").types<{
   keyword: string;
   page?: number;
 }>();
@@ -97,12 +95,12 @@ route({ keyword: "hello world" });
 
 ### 3. ハッシュ先行 (`#...?...`)
 
-出力順はテンプレートの順序を維持します。
+出力順はテンプレートの順序を維持します。SPA のルーターのように、ハッシュが先に来てクエリが後ろに続く形式にも対応します。
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("app://start#hash?query1&query2").types<{
+const route = ruroute("app://start#hash?query1&query2").types<{
   hash: string;
   query1: string;
   query2?: number;
@@ -115,24 +113,18 @@ route({ hash: "section", query1: "tab top" });
 ### 4. 静的ルート
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-interface EmptyRouteParams {
-  [key: string]: never;
-}
+const route = ruroute("/about").types();
 
-const route = createRuroute()("/about").types<EmptyRouteParams>();
-
-route({});
+route();
 // /about
 ```
 
 ### 5. 再利用可能なルート定義
 
 ```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute();
+import { ruroute } from "ruroute";
 
 const routes = {
   user: ruroute("/users/:id").types<{ id: string }>(),
@@ -153,9 +145,9 @@ const postUrl = routes.post({ postId: "p_1", preview: true });
 - 実行時のクエリ値は `string | number | boolean | undefined` を受け付けます。
 
 ```ts
-import { createRuroute } from "ruroute";
+import { ruroute } from "ruroute";
 
-const route = createRuroute()("/users/:id?tab#section").types<{
+const route = ruroute("/users/:id?tab#section").types<{
   id: string;
   tab?: string;
   section: string;
@@ -198,6 +190,16 @@ const ruroute = createRuroute({ prefix: "/api/v1" });
 const userRoute = ruroute("/users/:id").types<{ id: string }>();
 userRoute({ id: "42" });
 // → "/api/v1/users/42"
+```
+
+### `ruroute`
+
+`createRuroute()` の既定インスタンスです。オプションが不要なら直接 import できます。
+
+```ts
+import { ruroute } from "ruroute";
+
+const userRoute = ruroute("/users/:id").types<{ id: string }>();
 ```
 
 ### `ruroute(template).types<T>()`

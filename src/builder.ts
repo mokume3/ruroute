@@ -6,6 +6,8 @@ interface BuildableRouteParams {
   [key: string]: string | number | boolean | undefined;
 }
 
+const EMPTY_ROUTE_PARAMS: BuildableRouteParams = Object.create(null);
+
 const appendQueryString = (
   sourceUrl: string,
   queryKeys: string[],
@@ -39,8 +41,9 @@ const appendQueryString = (
 export const buildUrlFn = <T extends BuildableRouteParams>(
   compiledTemplateMeta: CompiledTemplateMeta,
   prefix: string = "",
-): ((params: T) => string) => {
-  return (params: T): string => {
+): ((...params: [T] extends [Record<string, never>] ? [] : [params: T]) => string) => {
+  return (...params: [T] extends [Record<string, never>] ? [] : [params: T]): string => {
+    const routeParams: BuildableRouteParams = params[0] ?? EMPTY_ROUTE_PARAMS;
     const pathSegments = compiledTemplateMeta.pathSegments;
     const shouldApplyPrefix = prefix && !compiledTemplateMeta.hasScheme;
     let builtUrl = shouldApplyPrefix ? prefix : "";
@@ -53,7 +56,7 @@ export const buildUrlFn = <T extends BuildableRouteParams>(
       if (isStaticPathSegment) {
         builtUrl += pathSegment;
       } else {
-        const pathParameterValue = params[pathSegment];
+        const pathParameterValue = routeParams[pathSegment];
 
         if (pathParameterValue === undefined) {
           throw new Error(`[ruroute] Missing required path parameter: "${pathSegment}"`);
@@ -67,7 +70,7 @@ export const buildUrlFn = <T extends BuildableRouteParams>(
 
     if (compiledTemplateMeta.hashBeforeQuery) {
       if (compiledTemplateMeta.hashKey !== undefined) {
-        const hashValue = params[compiledTemplateMeta.hashKey];
+        const hashValue = routeParams[compiledTemplateMeta.hashKey];
 
         if (hashValue === undefined) {
           throw new Error(
@@ -78,13 +81,13 @@ export const buildUrlFn = <T extends BuildableRouteParams>(
         builtUrl += `${HASH_PREFIX}${encodeUrlValue(hashValue)}`;
       }
 
-      return appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, params);
+      return appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, routeParams);
     }
 
-    builtUrl = appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, params);
+    builtUrl = appendQueryString(builtUrl, compiledTemplateMeta.queryKeys, routeParams);
 
     if (compiledTemplateMeta.hashKey !== undefined) {
-      const hashValue = params[compiledTemplateMeta.hashKey];
+      const hashValue = routeParams[compiledTemplateMeta.hashKey];
 
       if (hashValue === undefined) {
         throw new Error(
