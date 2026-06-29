@@ -20,12 +20,14 @@
 ## テスト
 
 - 必須: テストを書いてから実装する（TDD: Red -> Green -> Refactor）。
+- 必須: `pnpm coverage` を実行し、Statements / Branches / Functions / Lines のカバレッジがすべて 100% であることを確認してください。
 
 コミット前に必ず以下のコマンドでチェックを実行してください。
 
 ```bash
-pnpm test # テストを実行
 pnpm check # 型チェック / biomeチェックを実行
+pnpm test # テストを実行
+pnpm coverage # カバレッジを計測し、100%を確認
 ```
 
 ## 開発手順
@@ -35,7 +37,7 @@ pnpm check # 型チェック / biomeチェックを実行
 
 ### テスト前にビルド
 
-`pnpm build` は `pnpm test` , `pnpm fix` , `pnpm exec knip` を実行する前に完了している必要があります。  
+`pnpm build` は `pnpm test` , `pnpm coverage` , `pnpm fix` , `pnpm exec knip` を実行する前に完了している必要があります。  
 ソースファイルを変更した後は、必ずテストを実行する前にビルドしてください。
 
 ### 主要コマンド一覧
@@ -46,6 +48,7 @@ pnpm check # 型チェック / biomeチェックを実行
 - **ビルド**: `pnpm build`
 - **開発監視**: `pnpm dev` - パッケージを監視
 - **テスト**: `pnpm test` - テストを実行 (Vitest)
+- **カバレッジ**: `pnpm coverage` - カバレッジを計測し、100%であることを確認
 - **型チェック/Lint/フォーマット**: `pnpm check` - tsc / biome check
 - **型チェック/Lint/フォーマット 確定**: `pnpm fix` - tsc / biome check --write
 - **不要処理削除**: `pnpm exec knip` - 未使用のコードを削除するためのツール
