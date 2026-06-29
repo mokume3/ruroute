@@ -16,5 +16,5 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src", "tests/types.typecheck.ts"]
+  "include": ["src", "tests/types.typecheck.test.ts"]
 }
