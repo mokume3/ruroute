@@ -138,6 +138,50 @@ const userUrl = routes.user({ id: "u_1" });
 const postUrl = routes.post({ postId: "p_1", preview: true });
 ```
 
+### 6. 複数行テンプレートリテラル
+
+長いクエリテンプレートを複数行で記述できます。パス・クエリキー・ハッシュキーの前後空白は自動で取り除かれます。
+
+```ts
+import { ruroute } from "ruroute";
+
+const route = ruroute(`/search
+  ?q1
+  &q2
+  &q3
+  &q4
+  &q5
+  &q6
+  &q7
+  &q8
+  &q9
+  &q10
+  &q11
+  &q12
+  &q13
+  &q14
+  &q15`).types<{
+  q1?: string;
+  q2?: string;
+  q3?: string;
+  q4?: string;
+  q5?: string;
+  q6?: string;
+  q7?: string;
+  q8?: string;
+  q9?: string;
+  q10?: string;
+  q11?: string;
+  q12?: string;
+  q13?: string;
+  q14?: string;
+  q15?: string;
+}>();
+
+route({ q1: "a", q3: "c", q15: "z" });
+// /search?q1=a&q3=c&q15=z
+```
+
 ## 型安全に関する補足
 
 - パスとハッシュのパラメータは必須で、`.types<T>()` 上では `string` である必要があります。

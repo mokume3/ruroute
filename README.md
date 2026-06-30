@@ -138,6 +138,50 @@ const userUrl = routes.user({ id: "u_1" });
 const postUrl = routes.post({ postId: "p_1", preview: true });
 ```
 
+### 6. Multiline Template Literals
+
+You can format long query templates across multiple lines. Leading/trailing whitespace around path, query keys, and hash key is trimmed.
+
+```ts
+import { ruroute } from "ruroute";
+
+const route = ruroute(`/search
+  ?q1
+  &q2
+  &q3
+  &q4
+  &q5
+  &q6
+  &q7
+  &q8
+  &q9
+  &q10
+  &q11
+  &q12
+  &q13
+  &q14
+  &q15`).types<{
+  q1?: string;
+  q2?: string;
+  q3?: string;
+  q4?: string;
+  q5?: string;
+  q6?: string;
+  q7?: string;
+  q8?: string;
+  q9?: string;
+  q10?: string;
+  q11?: string;
+  q12?: string;
+  q13?: string;
+  q14?: string;
+  q15?: string;
+}>();
+
+route({ q1: "a", q3: "c", q15: "z" });
+// /search?q1=a&q3=c&q15=z
+```
+
 ## Type Safety Notes
 
 - Path and hash parameters must be present and typed as `string` in `.types<T>()`.

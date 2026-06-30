@@ -9,6 +9,7 @@ import {
 import type { RouteMeta } from "./types";
 
 export const parseTemplate = (template: string): RouteMeta => {
+  const shouldWarnDuplicateKeys = process.env.NODE_ENV !== "production";
   const firstHash = template.indexOf(HASH_START);
   const firstQuery = template.indexOf(QUERY_START);
 
@@ -36,11 +37,18 @@ export const parseTemplate = (template: string): RouteMeta => {
     hashPart = template.slice(firstHash + 1);
   }
 
+  pathPart = pathPart.trim();
+  if (hashPart !== undefined) {
+    hashPart = hashPart.trim();
+  }
+
   if (pathPart.indexOf(WILDCARD) !== -1) {
     throw new Error('[ruroute] Wildcard "*" in path is not supported.');
   }
 
-  const seen = Object.create(null);
+  const seen: Record<string, true> | undefined = shouldWarnDuplicateKeys
+    ? Object.create(null)
+    : undefined;
   let hasDuplicate = false;
 
   const pathSegments: string[] = [];
@@ -56,10 +64,12 @@ export const parseTemplate = (template: string): RouteMeta => {
         nameEnd++;
       }
       const name = pathPart.slice(nameStart, nameEnd);
-      if (seen[name]) {
-        hasDuplicate = true;
-      } else {
-        seen[name] = true;
+      if (seen) {
+        if (seen[name]) {
+          hasDuplicate = true;
+        } else {
+          seen[name] = true;
+        }
       }
       pathSegments.push(name);
       literalStart = nameEnd;
@@ -80,12 +90,14 @@ export const parseTemplate = (template: string): RouteMeta => {
     const queryLength = queryPart.length;
     for (let charIndex = 0; charIndex <= queryLength; charIndex++) {
       if (charIndex === queryLength || queryPart[charIndex] === QUERY_SEPARATOR) {
-        const key = queryPart.slice(keyStart, charIndex);
+        const key = queryPart.slice(keyStart, charIndex).trim();
         if (key.length > 0) {
-          if (seen[key]) {
-            hasDuplicate = true;
-          } else {
-            seen[key] = true;
+          if (seen) {
+            if (seen[key]) {
+              hasDuplicate = true;
+            } else {
+              seen[key] = true;
+            }
           }
           queryKeys.push(key);
         }
@@ -96,12 +108,12 @@ export const parseTemplate = (template: string): RouteMeta => {
 
   const hashKey = hashPart && hashPart.length > 0 ? hashPart : undefined;
   if (hashKey) {
-    if (seen[hashKey]) {
+    if (seen?.[hashKey]) {
       hasDuplicate = true;
     }
   }
 
-  if (hasDuplicate) {
+  if (seen && hasDuplicate) {
     console.warn(`[ruroute] Duplicate parameter keys in template: ${template}`);
   }
 

@@ -26,9 +26,9 @@ export interface RurouteTemplate<Template> {
 
 type RouteParamsOf<Template> =
   Section<Template> extends {
-    path: infer Path;
-    query: infer Query;
-    hash: infer Hash;
+    path: infer Path extends string;
+    query: infer Query extends string;
+    hash: infer Hash extends string;
   }
     ? { [Key in PathParamKeys<Path> & string]: string } & {
         [Key in QueryParamKeys<Query> & string]?: QueryValue;
@@ -50,16 +50,28 @@ type Section<Template> =
 
 type PathParamKeys<Path> = Path extends `${string}:${infer Rest}`
   ? Rest extends `${infer Name}/${infer After}`
-    ? Name | PathParamKeys<After>
-    : Rest
+    ? Trim<Name> | PathParamKeys<After>
+    : Trim<Rest>
   : never;
 
-type QueryParamKeys<Query> = Query extends ""
+type QueryParamKeys<Query extends string> = Query extends ""
   ? never
   : Query extends `${infer Key}&${infer Rest}`
-    ? Key | QueryParamKeys<Rest>
-    : Query;
+    ? Trim<Key> | QueryParamKeys<Rest>
+    : Trim<Query>;
 
-type HashParamKey<Hash> = Hash extends "" ? never : Hash;
+type HashParamKey<Hash extends string> = Trim<Hash> extends "" ? never : Trim<Hash>;
+
+type Whitespace = " " | "\n" | "\r" | "\t";
+
+type TrimLeft<Value extends string> = Value extends `${Whitespace}${infer Rest}`
+  ? TrimLeft<Rest>
+  : Value;
+
+type TrimRight<Value extends string> = Value extends `${infer Rest}${Whitespace}`
+  ? TrimRight<Rest>
+  : Value;
+
+type Trim<Value extends string> = TrimRight<TrimLeft<Value>>;
 
 type HasParams<Template> = keyof RouteParamsOf<Template> extends never ? false : true;
