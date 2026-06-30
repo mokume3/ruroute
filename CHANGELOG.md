@@ -2,6 +2,14 @@
 
 Notable changes to this project are documented in this file.
 
+## [0.3.0] - 2026-06-30
+
+### Changed
+- Added comprehensive type-check tests for union-typed path and hash parameters.
+- Relaxed route parameter typing in `src/types.ts` so path and hash parameters now accept `string | number | boolean`.
+- Updated type-level validation expectations in `tests/types.test-d.ts` to match the new parameter flexibility.
+- Added this changelog file to the repository and started tracking release notes.
+
 ## [0.2.0] - 2026-06-30
 
 ### Added

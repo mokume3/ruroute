@@ -30,9 +30,9 @@ type RouteParamsOf<Template> =
     query: infer Query extends string;
     hash: infer Hash extends string;
   }
-    ? { [Key in PathParamKeys<Path> & string]: string } & {
+    ? { [Key in PathParamKeys<Path> & string]: QueryValue } & {
         [Key in QueryParamKeys<Query> & string]?: QueryValue;
-      } & { [Key in HashParamKey<Hash> & string]: string }
+      } & { [Key in HashParamKey<Hash> & string]: QueryValue }
     : never;
 
 type RemoveScheme<Template> = Template extends `${string}://${infer Rest}` ? Rest : Template;

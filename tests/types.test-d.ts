@@ -35,6 +35,15 @@ interface MultilineQueryRouteParams {
   q3?: string;
 }
 
+interface PathUnionRouteParams {
+  id: string | number | boolean;
+}
+
+interface HashUnionRouteParams {
+  id: string;
+  section: string | number | boolean;
+}
+
 describe("types.typecheck", () => {
   const routeFactory = createRuroute();
 
@@ -54,6 +63,8 @@ describe("types.typecheck", () => {
       ?q1
       &q2
       &q3`).types<MultilineQueryRouteParams>();
+    const pathUnionRoute = routeFactory("/users/:id").types<PathUnionRouteParams>();
+    const hashUnionRoute = routeFactory("/guide/:id#section").types<HashUnionRouteParams>();
 
     expectTypeOf(appRoute).toEqualTypeOf<(params: AppRouteParams) => string>();
     expectTypeOf(queryOptionalRoute).toEqualTypeOf<(params: QueryOptionalRouteParams) => string>();
@@ -68,6 +79,8 @@ describe("types.typecheck", () => {
     expectTypeOf(multilineQueryRoute).toEqualTypeOf<
       (params: MultilineQueryRouteParams) => string
     >();
+    expectTypeOf(pathUnionRoute).toEqualTypeOf<(params: PathUnionRouteParams) => string>();
+    expectTypeOf(hashUnionRoute).toEqualTypeOf<(params: HashUnionRouteParams) => string>();
 
     expect(true).toBe(true);
   });
@@ -103,14 +116,9 @@ describe("types.typecheck", () => {
       tab: string;
     }>();
 
-    // @ts-expect-error パスパラメータはstringのみ
-    routeFactory("app://start/:param1").types<{
-      param1: number;
-    }>();
-
-    // @ts-expect-error ハッシュパラメータはstringのみ
+    // @ts-expect-error ハッシュパラメータは文字列・数値・真偽値のみ
     routeFactory("app://start#hash").types<{
-      hash: number;
+      hash: { nested: string };
     }>();
 
     // @ts-expect-error テンプレートにない追加キーは許可しない
