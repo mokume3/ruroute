@@ -1,7 +1,7 @@
 {
   "name": "ruroute",
   "type": "module",
-  "version": "0.4.0",
+  "version": "0.3.0",
   "description": "A type-safe URL builder",
   "keywords": [
     "typescript",
