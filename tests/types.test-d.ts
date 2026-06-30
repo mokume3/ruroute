@@ -29,6 +29,12 @@ interface DefaultInstanceRouteParams {
   query2?: number;
 }
 
+interface MultilineQueryRouteParams {
+  q1?: string;
+  q2?: string;
+  q3?: string;
+}
+
 describe("types.typecheck", () => {
   const routeFactory = createRuroute();
 
@@ -44,6 +50,10 @@ describe("types.typecheck", () => {
     const defaultInstanceRoute = ruroute(
       "app://start#hash?query1&query2",
     ).types<DefaultInstanceRouteParams>();
+    const multilineQueryRoute = routeFactory(`/search
+      ?q1
+      &q2
+      &q3`).types<MultilineQueryRouteParams>();
 
     expectTypeOf(appRoute).toEqualTypeOf<(params: AppRouteParams) => string>();
     expectTypeOf(queryOptionalRoute).toEqualTypeOf<(params: QueryOptionalRouteParams) => string>();
@@ -54,6 +64,9 @@ describe("types.typecheck", () => {
     expectTypeOf(staticRoute).toEqualTypeOf<() => string>();
     expectTypeOf(defaultInstanceRoute).toEqualTypeOf<
       (params: DefaultInstanceRouteParams) => string
+    >();
+    expectTypeOf(multilineQueryRoute).toEqualTypeOf<
+      (params: MultilineQueryRouteParams) => string
     >();
 
     expect(true).toBe(true);

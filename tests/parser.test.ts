@@ -88,6 +88,20 @@ describe("parseTemplate", () => {
     });
   });
 
+  it("改行とインデントを含むクエリテンプレートを解析できる", () => {
+    const meta = parseTemplate(`/search
+      ?q1
+      &q2
+      &q3`);
+
+    expect(meta).toMatchObject({
+      pathSegments: ["/search"],
+      queryKeys: ["q1", "q2", "q3"],
+      hashKey: undefined,
+      hashBeforeQuery: false,
+    });
+  });
+
   it("複数ハッシュは最初の#以降を1つのハッシュ文字列として扱う", () => {
     const meta = parseTemplate("app://start#hash1#hash2");
 
@@ -111,6 +125,25 @@ describe("parseTemplate", () => {
     parseTemplate("/posts/:section#section");
 
     expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("production環境では重複キー警告を出さずに解析できる", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    const meta = parseTemplate("/posts/:id/:id?query&query#hash");
+
+    process.env.NODE_ENV = originalNodeEnv;
+
+    expect(meta).toMatchObject({
+      pathSegments: ["/posts/", "id", "/", "id", ""],
+      queryKeys: ["query", "query"],
+      hashKey: "hash",
+      hashBeforeQuery: false,
+    });
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
 });

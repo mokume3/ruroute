@@ -104,6 +104,19 @@ describe("createRuroute", () => {
     expect(route({ keyword: "hello world" })).toBe("/search?keyword=hello%20world");
   });
 
+  it("改行テンプレートのクエリキーでもURLを生成できる", () => {
+    const route = ruroute(`/search
+      ?q1
+      &q2
+      &q3`).types<{
+      q1?: string;
+      q2?: string;
+      q3?: string;
+    }>();
+
+    expect(route({ q1: "one", q3: "three" })).toBe("/search?q1=one&q3=three");
+  });
+
   it("必須のパスパラメータが未指定ならエラーになる", () => {
     const route = ruroute("/users/:id").types<{ id: string }>();
 
@@ -180,6 +193,50 @@ describe("createRuroute with prefix", () => {
     const route = ruroute("/users/:id").types<{ id: string }>();
 
     expect(route({ id: "42" })).toBe("/users/42");
+  });
+});
+
+describe("createRuroute value handling", () => {
+  const ruroute = createRuroute();
+
+  it("falsyでもundefinedでないクエリ値（false/0/空文字）は出力に含める", () => {
+    const route = ruroute("/x?flag&count&note").types<{
+      flag?: boolean;
+      count?: number;
+      note?: string;
+    }>();
+
+    expect(route({ flag: false, count: 0, note: "" })).toBe("/x?flag=false&count=0&note=");
+  });
+
+  it("先頭クエリ値が未指定でも後続クエリが?で開始される", () => {
+    const route = ruroute("/x?first&second").types<{
+      first?: string;
+      second?: string;
+    }>();
+
+    expect(route({ second: "v" })).toBe("/x?second=v");
+  });
+
+  it("パス値の特殊文字をURLエンコードする", () => {
+    const route = ruroute("/p/:id").types<{ id: string }>();
+
+    expect(route({ id: "a b/c?d" })).toBe("/p/a%20b%2Fc%3Fd");
+  });
+
+  it("ハッシュ値の特殊文字をURLエンコードする", () => {
+    const route = ruroute("/p#section").types<{ section: string }>();
+
+    expect(route({ section: "a b/c" })).toBe("/p#a%20b%2Fc");
+  });
+
+  it("ハッシュ先行テンプレートでクエリが全て未指定ならハッシュのみ出力する", () => {
+    const route = ruroute("/p#section?tab").types<{
+      section: string;
+      tab?: string;
+    }>();
+
+    expect(route({ section: "top" })).toBe("/p#top");
   });
 });
 
