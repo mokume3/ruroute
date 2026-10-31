@@ -2,13 +2,7 @@
   "name": "ruroute",
   "type": "module",
   "version": "0.4.0",
-  "description": "A type-safe URL builder",
-  "keywords": [
-    "typescript",
-    "url",
-    "route",
-    "builder"
-  ],
+  "description": "Type-safe route definitions and URL builder",
   "author": "mokume3 <mokume.dev@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/mokume3/ruroute#readme",
@@ -19,34 +13,60 @@
   "bugs": {
     "url": "https://github.com/mokume3/ruroute/issues"
   },
+  "keywords": [
+    "typescript",
+    "url",
+    "route",
+    "builder",
+    "routing",
+    "type-safe"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": "./dist/index.mjs",
+    "./type": "./dist/type.mjs",
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.JP.md"
   ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
-    "bench": "vitest bench",
-    "check": "tsgo --noEmit && biome check",
-    "fix": "tsgo --noEmit && biome check --write",
-    "release": "bumpp",
-    "prepublishOnly": "pnpm run build"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "bench": "tsdown && vitest bench --run --reporter=verbose",
+    "size": "tsdown && node scripts/size.ts",
+    "check:treeshake": "tsdown && node scripts/check-treeshake.ts",
+    "check:type-perf": "node scripts/check-type-perf.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "prepublishOnly": "pnpm run build",
+    "knip": "knip",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.1",
-    "@types/node": "^26.0.1",
-    "@typescript/native-preview": "7.0.0-dev.20260509.2",
-    "@vitest/coverage-v8": "^4.1.9",
-    "bumpp": "^11.1.0",
-    "knip": "^6.23.0",
-    "lefthook": "^2.1.9",
-    "tsdown": "^0.22.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
-  }
+    "@arethetypeswrong/core": "^0.18.5",
+    "@biomejs/biome": "2.6.4",
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "5.0.5",
+    "knip": "^6.44.0",
+    "lefthook": "^2.2.2",
+    "publint": "^0.3.25",
+    "routopia": "1.2.3",
+    "tsdown": "^0.23.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "packageManager": "pnpm@12.16.1"
 }

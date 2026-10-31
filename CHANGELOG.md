@@ -2,6 +2,26 @@
 
 Notable changes to this project are documented in this file.
 
+## [1.0.0] - 2026-10-30
+
+### Breaking Changes
+- Rewrote the library around route definitions. `ruroute()`, `createRuroute()` and the template string syntax (`:name`, `?key`, `#hash`) have been removed.
+- Path params are now written as `[name]` in route paths.
+
+### Added
+- `defineRoutes({ baseUrl?, routes })` creates typed URL builders keyed by path.
+- `type.*` markers (`empty`, `string`, `number`, `boolean`, `literal`, `union`, `custom`, `array`, `optional`, `route`) describe params, query and hash per HTTP method (`get` / `post` / `put` / `delete`).
+- Type errors for mismatches between `[name]` path segments and `params`, and for typos in `type.route()`.
+- Shorthand argument keys `p` / `q` / `h`, and omission of the argument object when nothing is required.
+- Array query values that repeat the key (`tag=a&tag=b`).
+- Type utilities `RoutePath` and `RouteArgs`, and public types `Schema`, `Infer`, `Empty`, `Route`, `RouteDef` and `Routes`.
+- `ruroute/type` subpath export. `type.*` markers are tree-shakable.
+- Benchmarks and bundle size comparison with routopia (`docs/benchmark.md`).
+
+### Changed
+- Upgraded the toolchain to TypeScript 7, Vitest 5, tsdown 0.23 and Biome 2.6.
+- Switched the code style to single quotes without semicolons.
+
 ## [0.3.0] - 2026-06-30
 
 ### Changed

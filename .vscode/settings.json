@@ -1,0 +1,46 @@
+{
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[json]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[css]": { "editor.defaultFormatter": "biomejs.biome" },
+
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#f29e53",
+    "activityBar.activeBorder": "#15202b",
+    "activityBar.background": "#f29e53",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#09773d",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "activityBarTop.activeBackground": "#f29e53",
+    "activityBarTop.activeBorder": "#15202b",
+    "activityBarTop.background": "#f29e53",
+    "activityBarTop.foreground": "#15202b",
+    "activityBarTop.inactiveForeground": "#15202b99",
+    "commandCenter.border": "#15202b99",
+    "commandCenter.foreground": "#15202b",
+    "sash.hoverBorder": "#f29e53",
+    "statusBar.background": "#ee8324",
+    "statusBar.debuggingBackground": "#ee8324",
+    "statusBar.debuggingForeground": "#15202b",
+    "statusBar.foreground": "#15202b",
+    "statusBar.inactiveBackground": "#ee8324",
+    "statusBarItem.hoverBackground": "#cf6a10",
+    "statusBarItem.remoteBackground": "#89f6bc",
+    "statusBarItem.remoteForeground": "#15202b",
+    "titleBar.activeBackground": "#ee8324",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#ee832499",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#ee8324"
+}

@@ -1,6 +1,6 @@
 {
-  "entry": ["src/index.ts"],
-  "project": ["src/**/*.ts"],
-  "ignore": ["**/*.d.ts", "**/fixtures"],
-  "ignoreDependencies": ["hidden-package", "@typescript/native-preview"]
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/index.ts", "src/type.ts", "scripts/*.ts", "bench/**/*.ts", "tests/**/*.{test,test-d}.ts"],
+  "project": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "bench/**/*.ts"],
+  "ignoreUnresolved": ["../dist/index.mjs", "../../dist/index.mjs"]
 }

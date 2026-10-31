@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ruroute ベンチマーク</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f3f0;
+    --surface-1: #fcfcfb;
+    --border: #e2e1dc;
+    --grid: #ebeae6;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #77766f;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --hover-ring: #0b0b0b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #111110;
+      --surface-1: #1a1a19;
+      --border: #33332f;
+      --grid: #2a2a27;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #94938a;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --hover-ring: #f0efec;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #33332f;
+    --grid: #2a2a27;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #94938a;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --hover-ring: #f0efec;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font: 15px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 0 0 4px; }
+  h3 { font-size: 15px; margin: 24px 0 8px; }
+  p { margin: 8px 0; }
+  .meta, .note { color: var(--text-secondary); font-size: 13px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .tile .label { color: var(--text-secondary); font-size: 13px; }
+  .tile .value { font-size: 30px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.2; margin: 4px 0; }
+  .tile .sub { color: var(--text-muted); font-size: 13px; }
+
+  /* 横棒グラフ */
+  .chart { margin-top: 16px; }
+  .row { display: grid; grid-template-columns: 170px 1fr 84px; align-items: center; gap: 12px; min-height: 30px; }
+  .row .name { font-size: 13px; color: var(--text-secondary); text-align: right; }
+  .row .val { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .track { position: relative; height: 30px; }
+  .bar {
+    position: absolute; left: 0; height: 14px; top: 8px;
+    border-radius: 0 4px 4px 0;
+    outline: none;
+  }
+  .bar.pair { height: 10px; }
+  .bar.pair.s1 { top: 4px; }
+  .bar.pair.s2 { top: 16px; }
+  .bar:hover, .bar:focus-visible { box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 3px var(--hover-ring); }
+  .s1 { background: var(--series-1); }
+  .s2 { background: var(--series-2); }
+  .ref { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--text-muted); }
+  .ref-label { position: absolute; top: -18px; transform: translateX(-50%); font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .axis { display: grid; grid-template-columns: 170px 1fr 84px; gap: 12px; margin-top: 4px; }
+  .axis .ticks { position: relative; height: 18px; border-top: 1px solid var(--grid); }
+  .axis .ticks span { position: absolute; top: 2px; transform: translateX(-50%); font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin-top: 12px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 12px 0 0; padding: 0; min-width: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .seg button {
+    font: inherit; font-size: 13px; padding: 4px 12px; border: 0; background: transparent;
+    color: var(--text-secondary); cursor: pointer;
+  }
+  .seg button:not(:first-of-type) { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--grid); color: var(--text-primary); font-weight: 600; }
+
+  details { margin-top: 16px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 600; }
+  td { font-variant-numeric: tabular-nums; }
+
+  ul { padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+    padding: 8px 10px; font-size: 13px; min-width: 160px;
+    opacity: 0; transition: opacity 80ms;
+  }
+  #tooltip.show { opacity: 1; }
+  #tooltip .t-title { color: var(--text-secondary); margin-bottom: 4px; }
+  #tooltip .t-row { display: flex; align-items: center; gap: 8px; }
+  #tooltip .t-row b { font-variant-numeric: tabular-nums; }
+  #tooltip .t-key { width: 12px; height: 2px; border-radius: 1px; }
+  #tooltip .t-name { color: var(--text-secondary); }
+
+  @media (max-width: 600px) {
+    .row, .axis { grid-template-columns: 96px 1fr 64px; gap: 8px; }
+    .tile .value { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>ruroute と routopia の比較</h1>
+  <p class="meta">計測日: 2026-11-01 / Node v26.13.0 / Darwin arm64 / routopia 1.2.3。詳しい説明は <code>docs/benchmark.md</code>。</p>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">URL 生成の速さ(routopia 比)</div>
+      <div class="value">2.1〜5.1x</div>
+      <div class="sub">全 6 ケースで ruroute が速い</div>
+    </div>
+    <div class="tile">
+      <div class="label">利用例のバンドル(gzip)</div>
+      <div class="value">733 B</div>
+      <div class="sub">routopia は 821 B</div>
+    </div>
+    <div class="tile">
+      <div class="label">型チェック時間(負荷用コード)</div>
+      <div class="value">0.12 s</div>
+      <div class="sub">最初の実装 0.21 s から短縮</div>
+    </div>
+  </div>
+
+  <section class="card" aria-labelledby="perf-title">
+    <h2 id="perf-title">性能(<code>pnpm bench</code>)</h2>
+    <p class="note">ruroute の ops/s ÷ routopia の ops/s。破線の 1x が routopia と同じ速さ。ruroute はビルド済みの <code>dist/index.mjs</code> を計測している。</p>
+    <div class="chart" id="perf-chart" role="img" aria-label="ケースごとの routopia に対する ruroute の速度比"></div>
+    <details>
+      <summary>表で見る</summary>
+      <div class="table-wrap"><table id="perf-table"></table></div>
+    </details>
+    <p class="note">計測日ごとに絶対値は 1〜3 割ほど揺れる。前後比較は同じ日に続けて計測した値どうしで行っている。</p>
+
+    <h3>クエリキーのソートと type.* の共通化(変更前は <code>284872b</code>)</h3>
+    <div class="table-wrap"><table id="diff-table"></table></div>
+    <p class="note">ソートの分、クエリを含むケースが 4〜6% 遅くなった。クエリを含まないケースの差は計測のばらつきの範囲。<code>URLSearchParams</code> を使わず <code>encodeURIComponent</code> で組み立てる方式は、Node では遅かった(200 万回で約 800 ms 対 約 940〜1,300 ms)ため採用していない。</p>
+  </section>
+
+  <section class="card" aria-labelledby="size-title">
+    <h2 id="size-title">バンドルサイズ(<code>pnpm size</code>)</h2>
+    <p class="note">依存をすべて同梱して計測。all exports はライブラリ全体、usage は 3 ルートを定義して 4 回呼び出したときのサイズ。右端の数値は ruroute − routopia(マイナスなら ruroute が小さい)。</p>
+    <fieldset class="seg">
+      <legend class="sr-only">指標</legend>
+      <button type="button" data-metric="unminified" aria-pressed="false">unminified</button>
+      <button type="button" data-metric="minified" aria-pressed="false">minified</button>
+      <button type="button" data-metric="gzip" aria-pressed="true">gzip</button>
+      <button type="button" data-metric="brotli" aria-pressed="false">brotli</button>
+    </fieldset>
+    <div class="legend">
+      <span><i class="s1"></i>ruroute</span>
+      <span><i class="s2"></i>routopia</span>
+    </div>
+    <div class="chart" id="size-chart" role="img" aria-label="ruroute と routopia のバンドルサイズ"></div>
+    <details>
+      <summary>表で見る</summary>
+      <div class="table-wrap"><table id="size-table"></table></div>
+    </details>
+    <p class="note"><code>284872b</code> からの変化: クエリキーのソートで +9 / +5 / +5 B、<code>type.*</code> の共通化で all exports が −192 / −63 / −56 B(minified / gzip / brotli)。minified 以降は usage がどの指標でも routopia より小さく、all exports の gzip / brotli はまだ routopia の方が小さい。</p>
+    <p class="note">unminified は minify せずにバンドルしたサイズ(gzip / brotli は minified から計算)。ruroute の配布物は minify しておらず JSDoc コメントも残るため大きく出る。routopia の配布物はもともと minify 済みで、unminified の値はそれを整形し直したもの。利用者側で minify すれば minified の列になるので、unminified どうしの比較は参考値。</p>
+  </section>
+
+  <section class="card" aria-labelledby="tsc-title">
+    <h2 id="tsc-title">型チェックの負荷</h2>
+    <p class="note">40 ルート(クエリキー 10 個、うち省略可能 7 個、hash あり)と呼び出し 120 回の生成コードを <code>tsc --extendedDiagnostics</code> で計測した instantiation 数。</p>
+    <div class="chart" id="tsc-chart" role="img" aria-label="実装ごとの型 instantiation 数"></div>
+    <details>
+      <summary>表で見る</summary>
+      <div class="table-wrap"><table id="tsc-table"></table></div>
+    </details>
+    <p class="note">返り値の URL 型を引数から推論するようにして型の計算が増えた。増加の大半はキーのソートで、比較回数 n³ の方式から挿入ソート(n²)に変えて最初の実装の約 1/3 にした。省略可能なキーは 1 つごとに候補が倍になるため、4 つを超えた分は <code>${string}</code> にまとめている。</p>
+  </section>
+
+  <section class="card" aria-labelledby="misc-title">
+    <h2 id="misc-title">ツリーシェイキングと機能差</h2>
+    <ul>
+      <li><code>pnpm check:treeshake</code>: <code>type.empty</code> / <code>type.route</code> / <code>type.number</code> だけを使ったとき、未使用の <code>type.*</code> の名前がバンドルに残らないことを検証する。今回の出力は <code>tree-shaking OK (1034 B minified)</code>。</li>
+      <li>routopia は可変長パラメータ(<code>[...slug]</code> / <code>[[...slug]]</code>)に対応している。ruroute は対応していない。</li>
+      <li>両者ともクエリのキーをソートしてから組み立てる。</li>
+      <li>ruroute の <code>type.*</code> は型だけの情報で、実行時はすべて同じ空オブジェクトになる(値の検証はしない)。</li>
+      <li>性能は 1 回分の計測値なので、数 % 程度の差は計測のばらつきの範囲に入りうる。</li>
+    </ul>
+  </section>
+</main>
+<div id="tooltip" role="tooltip"></div>
+
+<script>
+  const PERF = [
+    { name: 'パラメータなし', ruroute: 32440112, routopia: 6977911 },
+    { name: 'パスパラメータ + hash', ruroute: 9568158, routopia: 2712357 },
+    { name: 'クエリ(配列を含む)', ruroute: 2707370, routopia: 1284713 },
+    { name: 'params + query + hash', ruroute: 1901882, routopia: 824023 },
+    { name: '絶対 URL のキー', ruroute: 15219740, routopia: 2986992 },
+    { name: 'ルート定義(100 ルート)', ruroute: 72002, routopia: 21314 },
+  ]
+  const DIFF = [
+    { name: 'パラメータなし', before: 34130622, after: 32440112 },
+    { name: 'パスパラメータ + hash', before: 9751246, after: 9568158 },
+    { name: 'クエリ(配列を含む)', before: 2881686, after: 2707370 },
+    { name: 'params + query + hash', before: 1983928, after: 1901882 },
+    { name: '絶対 URL のキー', before: 15798366, after: 15219740 },
+    { name: 'ルート定義(100 ルート)', before: 72497, after: 72002 },
+  ]
+  const SIZE = [
+    { name: 'all exports', ruroute: { unminified: 3054, minified: 1329, gzip: 792, brotli: 701 }, routopia: { unminified: 2207, minified: 1729, gzip: 725, brotli: 638 } },
+    { name: 'usage', ruroute: { unminified: 2543, minified: 1242, gzip: 733, brotli: 645 }, routopia: { unminified: 2591, minified: 1975, gzip: 821, brotli: 725 } },
+  ]
+  const TSC = [
+    { name: '284872b(推論なし)', inst: 84070, time: '0.041 s', memory: '38 MB' },
+    { name: '推論あり(最初の実装)', inst: 629260, time: '0.21 s', memory: '56 MB' },
+    { name: '推論あり(現在)', inst: 227477, time: '0.12 s', memory: '60 MB' },
+  ]
+
+  const fmt = (n) => n.toLocaleString('en-US')
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag)
+    if (cls) e.className = cls
+    if (text !== undefined) e.textContent = text
+    return e
+  }
+
+  // ツールチップ: 値を強く、名前を控えめに。項目名は textContent で入れる
+  const tip = document.getElementById('tooltip')
+  function showTip(target, title, rows) {
+    tip.replaceChildren(el('div', 't-title', title))
+    for (const r of rows) {
+      const row = el('div', 't-row')
+      if (r.series) {
+        const key = el('span', 't-key')
+        key.style.background = `var(--series-${r.series})`
+        row.append(key)
+      }
+      row.append(el('b', '', r.value), el('span', 't-name', r.name))
+      tip.append(row)
+    }
+    const rect = target.getBoundingClientRect()
+    tip.classList.add('show')
+    const w = tip.offsetWidth
+    const x = Math.min(window.innerWidth - w - 8, Math.max(8, rect.left + rect.width / 2 - w / 2))
+    const y = rect.top - tip.offsetHeight - 8
+    tip.style.left = `${x}px`
+    tip.style.top = `${y < 8 ? rect.bottom + 8 : y}px`
+  }
+  const hideTip = () => tip.classList.remove('show')
+  function bindTip(bar, title, rows) {
+    bar.tabIndex = 0
+    bar.setAttribute('aria-label', `${title}: ${rows.map((r) => `${r.name} ${r.value}`).join('、')}`)
+    const show = () => showTip(bar, title, rows)
+    bar.addEventListener('pointerenter', show)
+    bar.addEventListener('focus', show)
+    bar.addEventListener('pointerleave', hideTip)
+    bar.addEventListener('blur', hideTip)
+  }
+
+  function axis(container, max, ticks, format) {
+    const a = el('div', 'axis')
+    const t = el('div', 'ticks')
+    for (const v of ticks) {
+      const s = el('span', '', format(v))
+      s.style.left = `${(v / max) * 100}%`
+      t.append(s)
+    }
+    a.append(el('div'), t, el('div'))
+    container.append(a)
+  }
+
+  function table(id, head, rows) {
+    const t = document.getElementById(id)
+    const tr = el('tr')
+    for (const h of head) tr.append(el('th', '', h))
+    const thead = el('thead')
+    thead.append(tr)
+    const tbody = el('tbody')
+    for (const r of rows) {
+      const row = el('tr')
+      for (const c of r) row.append(el('td', '', c))
+      tbody.append(row)
+    }
+    t.replaceChildren(thead, tbody)
+  }
+
+  // 性能: 速度比の横棒(1 系列なので凡例なし)
+  {
+    const box = document.getElementById('perf-chart')
+    const max = 6
+    PERF.forEach((d, i) => {
+      const ratio = d.ruroute / d.routopia
+      const row = el('div', 'row')
+      const track = el('div', 'track')
+      const ref = el('div', 'ref')
+      ref.style.left = `${(1 / max) * 100}%`
+      if (i === 0) ref.append(el('span', 'ref-label', 'routopia = 1x'))
+      const bar = el('div', 'bar s1')
+      bar.style.width = `${(ratio / max) * 100}%`
+      bindTip(bar, d.name, [
+        { value: `${ratio.toFixed(2)}x`, name: '速度比' },
+        { value: `${fmt(d.ruroute)} ops/s`, name: 'ruroute', series: 1 },
+        { value: `${fmt(d.routopia)} ops/s`, name: 'routopia' },
+      ])
+      track.append(bar, ref)
+      row.append(el('div', 'name', d.name), track, el('div', 'val', `${ratio.toFixed(2)}x`))
+      box.append(row)
+    })
+    box.style.paddingTop = '18px'
+    axis(box, max, [0, 1, 2, 3, 4, 5, 6], (v) => `${v}x`)
+    table(
+      'perf-table',
+      ['ケース', 'ruroute (ops/s)', 'routopia (ops/s)', '比'],
+      PERF.map((d) => [d.name, fmt(d.ruroute), fmt(d.routopia), `${(d.ruroute / d.routopia).toFixed(2)}x`]),
+    )
+    table(
+      'diff-table',
+      ['ケース', '変更前 (ops/s)', '変更後 (ops/s)', '変化'],
+      DIFF.map((d) => {
+        const pct = ((d.after / d.before - 1) * 100).toFixed(1)
+        return [d.name, fmt(d.before), fmt(d.after), `${pct > 0 ? '+' : ''}${pct}%`]
+      }),
+    )
+  }
+
+  // バンドルサイズ: 2 系列の横棒、指標を切り替え
+  {
+    const box = document.getElementById('size-chart')
+    const buttons = document.querySelectorAll('.seg button')
+    const render = (metric) => {
+      box.replaceChildren()
+      const max = Math.ceil(Math.max(...SIZE.flatMap((d) => [d.ruroute[metric], d.routopia[metric]])) / 500) * 500
+      for (const d of SIZE) {
+        const row = el('div', 'row')
+        const track = el('div', 'track')
+        const libs = [['ruroute', 1], ['routopia', 2]]
+        for (const [lib, s] of libs) {
+          const bar = el('div', `bar pair s${s}`)
+          bar.style.width = `${(d[lib][metric] / max) * 100}%`
+          bindTip(bar, `${d.name}(${metric})`, libs.map(([l, ls]) => ({ value: `${fmt(d[l][metric])} B`, name: l, series: ls })))
+          track.append(bar)
+        }
+        const diff = d.ruroute[metric] - d.routopia[metric]
+        row.append(el('div', 'name', d.name), track, el('div', 'val', `${diff > 0 ? '+' : ''}${diff} B`))
+        box.append(row)
+      }
+      const ticks = Array.from({ length: max / 500 + 1 }, (_, i) => i * 500)
+      axis(box, max, ticks, (v) => `${fmt(v)} B`)
+      for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.metric === metric))
+    }
+    for (const b of buttons) b.addEventListener('click', () => render(b.dataset.metric))
+    render('gzip')
+    table(
+      'size-table',
+      ['bundle', 'unminified (B)', 'minified (B)', 'gzip (B)', 'brotli (B)'],
+      SIZE.flatMap((d) => [
+        [`ruroute (${d.name})`, d.ruroute.unminified, d.ruroute.minified, d.ruroute.gzip, d.ruroute.brotli].map(String),
+        [`routopia (${d.name})`, d.routopia.unminified, d.routopia.minified, d.routopia.gzip, d.routopia.brotli].map(String),
+      ]),
+    )
+  }
+
+  // 型チェック: instantiation 数の横棒(1 系列)
+  {
+    const box = document.getElementById('tsc-chart')
+    const max = 700000
+    for (const d of TSC) {
+      const row = el('div', 'row')
+      const track = el('div', 'track')
+      const bar = el('div', 'bar s1')
+      bar.style.width = `${(d.inst / max) * 100}%`
+      bindTip(bar, d.name, [
+        { value: fmt(d.inst), name: 'instantiations', series: 1 },
+        { value: d.time, name: 'check time' },
+        { value: d.memory, name: 'memory' },
+      ])
+      track.append(bar)
+      row.append(el('div', 'name', d.name), track, el('div', 'val', `${Math.round(d.inst / 1000)}k`))
+      box.append(row)
+    }
+    axis(box, max, [0, 200000, 400000, 600000], (v) => `${v / 1000}k`)
+    table('tsc-table', ['実装', 'instantiations', 'check time', 'memory'], TSC.map((d) => [d.name, fmt(d.inst), d.time, d.memory]))
+  }
+</script>
+</body>
+</html>

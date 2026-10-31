@@ -1,16 +1,13 @@
 # ruroute
 
-ruroute is a TypeScript-first URL builder that turns template strings into strongly typed route functions.
+Type-safe route definitions and URL builder for TypeScript.
 
 Japanese README: [README.JP.md](./README.JP.md)
 
-## Features
-
-- Strong template-to-params type checking
-- Automatic URL encoding for path, query, and hash values
-- Optional query parameters supported
-- Supports both `?query#hash` and `#hash?query` template order
-- Works with custom schemes and regular paths
+- Define routes once, get typed URL builders for each HTTP method
+- Path params are inferred from the path (`/users/[id]`) and checked at definition time
+- Query, hash, absolute URLs and custom schemes (`myapp://…`)
+- No runtime validation, no dependencies; unused `type.*` markers are tree-shaken
 
 ## Installation
 
@@ -21,244 +18,153 @@ pnpm add ruroute
 ## Quick Start
 
 ```ts
-import { ruroute } from "ruroute";
+import { defineRoutes, type } from 'ruroute'
 
-const userRoute = ruroute("/users/:id?tab#section").types<{
-  id: string;
-  tab?: string;
-  section: string;
-}>();
+const routes = defineRoutes({
+  baseUrl: 'https://api.example.com', // optional
+  routes: {
+    '/health': type.empty,
+    '/users': type.route({
+      get: { query: { page: type.optional(type.number) } },
+      post: type.empty,
+    }),
+    '/users/[id]': type.route({
+      get: { params: { id: type.number }, hash: type.optional(type.string) },
+      delete: { params: { id: type.number } },
+    }),
+  },
+})
 
-const url = userRoute({
-  id: "42",
-  tab: "profile",
-  section: "overview",
-});
+routes['/health']() // https://api.example.com/health
+routes['/users']({ q: { page: 2 } }) // https://api.example.com/users?page=2
+routes['/users'].post() // https://api.example.com/users
+routes['/users/[id]']({ p: { id: 1 }, h: 'top' }) // https://api.example.com/users/1#top
+routes['/users/[id]'].delete({ params: { id: 1 } }) // https://api.example.com/users/1
+```
 
+- Calling a route directly builds the `get` URL. `.get` / `.post` / `.put` / `.delete` exist only for defined methods.
+- Arguments accept `params` / `query` / `hash` or the short forms `p` / `q` / `h` (not both for the same item).
+- The argument object can be omitted when nothing is required.
+- Every `[name]` in the path must be defined in `params` of every method. Missing or extra keys are type errors.
+
+## type
+
+| type | TS type | params | query | hash |
+|---|---|---|---|---|
+| `type.empty` | (no arguments) | – | – | – |
+| `type.string` | `string` | ✓ | ✓ | ✓ |
+| `type.number` | `number` | ✓ | ✓ | ✓ |
+| `type.boolean` | `boolean` | – | ✓ | – |
+| `type.literal([...])` | union of the values | ✓ | ✓ | ✓ |
+| `type.union([...])` | union of the schemas | ✓ | ✓ | ✓ |
+| `type.custom<T>()` | `T` | ✓ | ✓ | ✓ |
+| `type.array(T)` | `readonly T[]` | – | ✓ | – |
+| `type.optional(T)` | `T \| undefined` (key can be omitted) | – | ✓ | ✓ |
+
+`type.custom<T>()` lets you use branded types or existing unions. `T` must extend `string | number` (params / hash) or `string | number | boolean` (query).
+
+## URL rules
+
+| part | rule |
+|---|---|
+| baseUrl | Joined with the key. If baseUrl ends with `/` and the key starts with `/`, one `/` is removed (`myapp://` + `/items` → `myapp://items`). |
+| params | `[name]` is replaced with `encodeURIComponent(String(value))`. |
+| query | Built with `URLSearchParams`, spaces encoded as `%20`, keys sorted (`URLSearchParams.sort()`). `undefined` keys are skipped; arrays repeat the key (`tag=a&tag=b`). No `?` when empty. |
+| hash | `#` + `encodeURIComponent(String(value))`. Skipped when `undefined` or `''`. |
+
+Values are not validated at runtime.
+
+The return type reflects the arguments you pass: `routes['/users']({ q: { page: 1 } })` is `` `…/users?page=${string}` ``, and `#${string}` is added only when a non-empty hash is passed.
+
+## baseUrl, absolute URLs and custom schemes
+
+Without `baseUrl`, keys can be absolute URLs or custom-scheme URLs:
+
+```ts
+const routes = defineRoutes({
+  routes: {
+    'https://api.example1.com/health': type.empty,
+    'myapp://items/[id]': type.route({ get: { params: { id: type.number } } }),
+  },
+})
+routes['myapp://items/[id]']({ p: { id: 1 } }) // myapp://items/1
+```
+
+With `baseUrl`, keys must be paths starting with `/` (not `//`) (otherwise a type error: `'baseUrl を指定したときはキーを / で始まるパスにしてください'`).
+
+## Type utilities
+
+```ts
+import type { RouteArgs, RoutePath, RouteDef, ValidRoutes } from 'ruroute'
+
+type Path = RoutePath<typeof routes> // '/health' | '/users' | '/users/[id]'
+type Args = RouteArgs<typeof routes, '/users', 'get'> // argument type of the call
+```
+
+`ValidRoutes<R, B>` lets you write a wrapper with a fixed `baseUrl`:
+
+```ts
+const BASE = 'https://api.example.com'
+
+export function createApi<R extends Record<string, RouteDef>>(
+  routes: ValidRoutes<R, typeof BASE>,
+) {
+  return defineRoutes({ baseUrl: BASE, routes })
+}
+```
+
+`Schema`, `Infer`, `Empty`, `Route`, `RouteDef`, `Routes` and `RoutesConfig` are also exported.
+
+## Not supported
+
+- Catch-all params (`[...slug]` / `[[...slug]]`) and optional params. `[...slug]` has no special handling and is treated as a regular param named `...slug`.
+- Sorting query keys
+- URL parsing and runtime validation
+- IPv6 literal hosts in keys (`http://[::1]/…`); put them in `baseUrl` instead
+
+## Benchmark
+
+See [docs/benchmark.md](./docs/benchmark.md) for a comparison with [routopia](https://github.com/yKicchan/routopia).
+
+## Migrating from 0.4
+
+The API was rewritten. Template strings and `.types<>()` are replaced by `defineRoutes` and `type.*`.
+
+```ts
+// 0.4
+const userRoute = ruroute('/users/:id?tab#section').types<{
+  id: string
+  tab?: string
+  section: string
+}>()
+userRoute({ id: '42', tab: 'profile', section: 'overview' })
+
+// now
+const routes = defineRoutes({
+  routes: {
+    '/users/[id]': type.route({
+      get: {
+        params: { id: type.string },
+        query: { tab: type.optional(type.string) },
+        hash: type.string,
+      },
+    }),
+  },
+})
+routes['/users/[id]']({ p: { id: '42' }, q: { tab: 'profile' }, h: 'overview' })
 // /users/42?tab=profile#overview
 ```
 
-## Template Syntax
+- `:name` → `[name]`
+- Query keys and hash are declared in the route definition instead of the template
+- Arguments are grouped into `p` / `q` / `h`
 
-- Path parameter: `:name`
-- Query keys: `?key1&key2`
-- Hash key: `#hashKey`
+## Releasing
 
-Examples:
+1. Run `pnpm changeset` to record the changes and bump type.
+2. Run `pnpm version-packages` to update the version and CHANGELOG.md, then commit the changes.
+3. Run `pnpm release` to build and publish the package to npm (`prepublishOnly` runs the build). After publishing, push the generated tags with `git push --follow-tags`.
 
-- `/users/:id`
-- `/search?keyword&page`
-- `/docs/:slug#section`
-- `app://start/:id?tab#section`
-- `app://start#section?tab`
+## License
 
-## Usage Patterns (TypeScript)
-
-### 1. Path + Query + Hash
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute("app://start/:param1/www/:param2?query1&query2#hash").types<{
-  param1: string;
-  param2: string;
-  query1: number;
-  query2?: string;
-  hash: string;
-}>();
-
-const url = route({
-  param1: "value1",
-  param2: "value2",
-  query1: 123,
-  hash: "overview",
-});
-
-// app://start/value1/www/value2?query1=123#overview
-```
-
-### 2. Optional Query Parameters
-
-If a query value is `undefined`, the key is omitted.
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute("/search?keyword&page").types<{
-  keyword: string;
-  page?: number;
-}>();
-
-route({ keyword: "hello world" });
-// /search?keyword=hello%20world
-```
-
-### 3. Hash Before Query (`#...?...`)
-
-The output preserves the template order. This also supports SPA-style routes where the hash comes before the query string.
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute("app://start#hash?query1&query2").types<{
-  hash: string;
-  query1: string;
-  query2?: number;
-}>();
-
-route({ hash: "section", query1: "tab top" });
-// app://start#section?query1=tab%20top
-```
-
-### 4. Static Routes
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute("/about").types();
-
-route();
-// /about
-```
-
-### 5. Reusable Route Collection
-
-```ts
-import { ruroute } from "ruroute";
-
-const routes = {
-  user: ruroute("/users/:id").types<{ id: string }>(),
-  post: ruroute("/posts/:postId?preview").types<{
-    postId: string;
-    preview?: boolean;
-  }>(),
-};
-
-const userUrl = routes.user({ id: "u_1" });
-const postUrl = routes.post({ postId: "p_1", preview: true });
-```
-
-### 6. Multiline Template Literals
-
-You can format long query templates across multiple lines. Leading/trailing whitespace around path, query keys, and hash key is trimmed.
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute(`/search
-  ?q1
-  &q2
-  &q3
-  &q4
-  &q5
-  &q6
-  &q7
-  &q8
-  &q9
-  &q10
-  &q11
-  &q12
-  &q13
-  &q14
-  &q15`).types<{
-  q1?: string;
-  q2?: string;
-  q3?: string;
-  q4?: string;
-  q5?: string;
-  q6?: string;
-  q7?: string;
-  q8?: string;
-  q9?: string;
-  q10?: string;
-  q11?: string;
-  q12?: string;
-  q13?: string;
-  q14?: string;
-  q15?: string;
-}>();
-
-route({ q1: "a", q3: "c", q15: "z" });
-// /search?q1=a&q3=c&q15=z
-```
-
-## Type Safety Notes
-
-- Path and hash parameters must be present and typed as `string` in `.types<T>()`.
-- Query keys in the template must exist in `T`.
-- Query values can be `string | number | boolean | undefined` at runtime.
-
-```ts
-import { ruroute } from "ruroute";
-
-const route = ruroute("/users/:id?tab#section").types<{
-  id: string;
-  tab?: string;
-  section: string;
-}>();
-
-// @ts-expect-error - Missing required path parameter
-route({ tab: "profile", section: "overview" });
-
-// @ts-expect-error - Missing hash parameter
-route({ id: "42", tab: "profile" });
-```
-
-## Runtime Behavior
-
-- Missing required path/hash values throw an error.
-- Duplicate template keys print a warning in non-production environments.
-- Wildcard path (`*`) and optional path syntax (`:id?`) are not supported.
-
-## API
-
-### `createRuroute(options?)`
-
-Creates a route factory.
-
-```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute();
-```
-
-#### Options
-
-- `prefix?: string` — Prepends a string to all relative paths (ignored for scheme-based URLs)
-
-```ts
-import { createRuroute } from "ruroute";
-
-const ruroute = createRuroute({ prefix: "/api/v1" });
-
-const userRoute = ruroute("/users/:id").types<{ id: string }>();
-userRoute({ id: "42" });
-// → "/api/v1/users/42"
-```
-
-### `ruroute`
-
-This is the default `createRuroute()` instance. Import it directly when you do not need options.
-
-```ts
-import { ruroute } from "ruroute";
-
-const userRoute = ruroute("/users/:id").types<{ id: string }>();
-```
-
-### `ruroute(template).types<T>()`
-
-Compiles a template and returns a function:
-
-```ts
-(params: T) => string
-```
-
-## Development
-
-```bash
-pnpm build
-pnpm test
-pnpm typecheck
-pnpm check
-```
+MIT

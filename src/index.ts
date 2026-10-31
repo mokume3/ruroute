@@ -1,12 +1,14 @@
-import { createRuroute } from "./builder";
-import type { RurouteFactory } from "./types";
-
-export { createRuroute };
-export const ruroute: RurouteFactory = createRuroute();
+export { defineRoutes } from './define-routes'
+export * as type from './type'
 export type {
-  CreateRurouteOptions,
-  QueryValue,
-  RouteMeta,
-  RurouteFactory,
-  RurouteTemplate,
-} from "./types";
+  Empty,
+  Infer,
+  Route,
+  RouteArgs,
+  RouteDef,
+  RoutePath,
+  Routes,
+  RoutesConfig,
+  Schema,
+  ValidRoutes,
+} from './types'

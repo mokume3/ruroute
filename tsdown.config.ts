@@ -1,13 +1,27 @@
-import { defineConfig } from "tsdown";
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
+  entry: ['src/index.ts', 'src/type.ts'],
   dts: {
-    tsgo: true,
-  },
-  define: {
-    "process.env.NODE_ENV": '"production"',
+    generator: 'tsgo',
   },
   exports: true,
-  minify: true,
-  // ...config options
-});
+  platform: 'neutral',
+  fixedExtension: true,
+  target: 'es2022',
+  publint: true,
+  attw: { profile: 'esm-only' },
+  failOnWarn: 'ci-only',
+  plugins: [
+    {
+      // type.* を利用者のバンドラでツリーシェイクできるよう、
+      // index から type への参照を静的な名前空間 re-export のまま残す
+      name: 'ruroute:external-type-namespace',
+      resolveId(id, importer) {
+        if (id === './type' && importer?.endsWith('/src/index.ts')) {
+          return { id: './type.mjs', external: true }
+        }
+      },
+    },
+  ],
+})
