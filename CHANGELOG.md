@@ -1,17 +1,18 @@
 # Changelog
 
-Notable changes to this project are documented in this file.
-
-## [1.0.0] - 2026-10-30
+## [0.5.0] - 2026-11-01
 
 ### Breaking Changes
-- Rewrote the library around route definitions. `ruroute()`, `createRuroute()` and the template string syntax (`:name`, `?key`, `#hash`) have been removed.
+- Redesigned the library interface around route definitions. `ruroute()`, `createRuroute()` and the template string syntax (`:name`, `?key`, `#hash`) have been removed (see "Migrating from 0.4" in the README).
 - Path params are now written as `[name]` in route paths.
+- Query keys are now sorted in the output URL.
 
 ### Added
 - `defineRoutes({ baseUrl?, routes })` creates typed URL builders keyed by path.
 - `type.*` markers (`empty`, `string`, `number`, `boolean`, `literal`, `union`, `custom`, `array`, `optional`, `route`) describe params, query and hash per HTTP method (`get` / `post` / `put` / `delete`).
-- Type errors for mismatches between `[name]` path segments and `params`, and for typos in `type.route()`.
+- The URL return type is inferred from the passed query and hash (e.g. `` `…/users?page=${string}` ``).
+- Custom URL schemes.
+- Type errors for mismatches between `[name]` path segments and `params`, for typos in `type.route()`, and for keys that are not paths when `baseUrl` is set.
 - Shorthand argument keys `p` / `q` / `h`, and omission of the argument object when nothing is required.
 - Array query values that repeat the key (`tag=a&tag=b`).
 - Type utilities `RoutePath` and `RouteArgs`, and public types `Schema`, `Infer`, `Empty`, `Route`, `RouteDef` and `Routes`.
@@ -19,6 +20,7 @@ Notable changes to this project are documented in this file.
 - Benchmarks and bundle size comparison with routopia (`docs/benchmark.md`).
 
 ### Changed
+- Faster URL building.
 - Upgraded the toolchain to TypeScript 7, Vitest 5, tsdown 0.23 and Biome 2.6.
 - Switched the code style to single quotes without semicolons.
 
