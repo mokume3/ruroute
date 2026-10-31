@@ -59,7 +59,7 @@ pnpm changeset
    git commit -m "chore: release v$(node -p "require('./package.json').version")"
    ```
 
-4. タグを作って push します。`changeset tag` が `v<version>` のタグを作り、`git push --follow-tags` で main とタグを一緒に push します。push 前に lefthook の pre-push（テスト・カバレッジ・knip など）が走ります。
+4. タグを作って push します。`changeset git-tag` が `v<version>` のタグを作り、`git push --follow-tags` で main とタグを一緒に push します。push 前に lefthook の pre-push（テスト・カバレッジ・knip など）が走ります。
 
    ```bash
    pnpm release
