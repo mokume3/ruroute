@@ -46,7 +46,7 @@
     "check:type-perf": "node scripts/check-type-perf.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset publish",
+    "release": "changeset tag && git push --follow-tags",
     "prepublishOnly": "pnpm run build",
     "knip": "knip",
     "lint": "biome check .",
