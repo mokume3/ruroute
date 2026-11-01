@@ -12,7 +12,7 @@ export default defineConfig({
   publint: true,
   attw: { profile: 'esm-only' },
   failOnWarn: 'ci-only',
-  suppressWarnings: 'TypeScript 7.0 does not yet have a stable API',
+  suppressWarnings: 'TypeScript Go is experimental',
   plugins: [
     {
       // type.* を利用者のバンドラでツリーシェイクできるよう、
