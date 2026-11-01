@@ -77,8 +77,11 @@ type ParamsPart<D> = D extends { readonly params: infer P extends ParamsDef }
 /** The query definition's argument type. */
 type QueryInput<D> = D extends { readonly query: infer Q extends QueryDef } ? QueryArgs<Q> : never
 
-/** Q inferred from the call, with keys outside the definition rejected. */
-type ExactQuery<D, Q> = Q & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
+/**
+ * Q inferred from the call, with keys outside the definition rejected.
+ * QueryInput<D> does not narrow Q, but without it the keys point only at the call site and lose the definition's JSDoc.
+ */
+type ExactQuery<D, Q> = Q & QueryInput<D> & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
 
 type QueryPart<D, Q> = D extends { readonly query: QueryDef }
   ? Alias<'query', 'q', ExactQuery<D, Q>, HasRequiredKey<QueryInput<D>>>
@@ -87,8 +90,21 @@ type QueryPart<D, Q> = D extends { readonly query: QueryDef }
 /** The hash definition's argument type. */
 type HashInput<D> = D extends { readonly hash: infer H extends HashDef } ? Infer<H> : never
 
+/**
+ * Adds no type, only the JSDoc of definition key K, by mapping it like Pick.
+ * Kept as its own alias because TypeScript 7.0 drops the JSDoc when this is inlined into an intersection.
+ */
+type KeyDoc<D, K extends keyof D> = { [P in K]?: unknown }
+
+/** KeyDoc renamed to Name. Only TypeScript 7.1 and later show the JSDoc of a renamed key. */
+type RenamedKeyDoc<D, K extends keyof D, Name extends string> = {
+  [P in keyof D as P extends K ? Name : never]?: unknown
+}
+
 type HashPart<D, H> = D extends { readonly hash: HashDef }
-  ? Alias<'hash', 'h', H, undefined extends HashInput<D> ? false : true>
+  ? Alias<'hash', 'h', H, undefined extends HashInput<D> ? false : true> &
+      KeyDoc<D, 'hash'> &
+      RenamedKeyDoc<D, 'hash', 'h'>
   : unknown
 
 /** Call arguments for method definition D, supporting full and shorthand names. */

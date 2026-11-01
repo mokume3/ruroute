@@ -33,7 +33,9 @@ const routes2 = defineRoutes({
     '/users': type.route({
       get: {
         query: {
+          /** ページ */
           page: type.optional(type.number),
+          /** AAA */
           aaa: type.literal(['1', '2']),
         },
       },
@@ -42,9 +44,12 @@ const routes2 = defineRoutes({
     '/users/[id]/[id1]': type.route({
       get: {
         params: {
+          /** ID */
           id: type.number,
+          /** ID1 */
           id1: type.number,
         },
+        /** ハッシュ */
         hash: type.optional(type.string),
       },
     }),
@@ -52,7 +57,7 @@ const routes2 = defineRoutes({
 })
 
 export const aaaa2 = routes2['/health/aaa']()
-export const bbbb2 = routes2['/users']({ q: { page: 1, aaa: '2' } })
+export const bbbb2 = routes2['/users'].get({ query: { page: 1, aaa: '2' } })
 export const cccc2 = routes2['/users'].post()
 export const dddd2 = routes2['/users/[id]/[id1]']({ p: { id: 1, id1: 1 }, h: 'top' })
 
