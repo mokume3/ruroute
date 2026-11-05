@@ -35,6 +35,12 @@ describe('defineRoutes', () => {
     expect(routes['/users/[id]']({ params: { id: 1 }, hash: 'top' })).toBe('https://api.example.com/users/1#top')
   })
 
+  test('メソッド経由でも短縮形と正式名を同じ URL にする', () => {
+    expect(routes['/users/[id]'].get({ p: { id: 1 }, h: 'top' })).toBe('https://api.example.com/users/1#top')
+    expect(routes['/users/[id]'].get({ params: { id: 1 }, hash: 'top' })).toBe('https://api.example.com/users/1#top')
+    expect(routes['/users'].get({ q: { page: 2 } })).toBe(routes['/users']({ query: { page: 2 } }))
+  })
+
   test('定義したメソッドだけを持つ', () => {
     expect(Object.keys(routes['/users']).sort()).toEqual(['get', 'post'])
     expect(Object.keys(routes['/health'])).toEqual(['get'])

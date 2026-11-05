@@ -33,7 +33,7 @@ export function compileUrl(baseUrl: string | undefined, path: string): UrlBuilde
 function stringifyQuery(query: Record<string, QueryValue> | undefined) {
   if (query == null) return ''
   const search = new URLSearchParams()
-  for (const key of Object.keys(query)) {
+  for (const key in query) {
     const value = query[key]
     if (value === undefined) continue
     if (Array.isArray(value)) {

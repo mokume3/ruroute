@@ -23,12 +23,12 @@ export function defineRoutes<R extends Record<string, RouteDef>, const B extends
 ): Routes<R, NoInfer<B>> {
   const result: Record<string, unknown> = {}
   const routes: Record<string, RouteDef> = config.routes
-  for (const [path, def] of Object.entries(routes)) {
+  for (const path in routes) {
+    const def = routes[path]
     const url = compileUrl(config.baseUrl, path)
-    const toUrl: UrlFn = (a) => url(a?.params ?? a?.p, a?.query ?? a?.q, a?.hash ?? a?.h)
     const methods = def.kind === 'route' ? def.methods : { get: def }
-    const fn: UrlFn & { [M in Method]?: UrlFn } = (a) => toUrl(a)
-    for (const method in methods) fn[method as Method] = toUrl
+    const fn: UrlFn & { [M in Method]?: UrlFn } = (a) => url(a?.params ?? a?.p, a?.query ?? a?.q, a?.hash ?? a?.h)
+    for (const method in methods) fn[method as Method] = fn
     result[path] = fn
   }
   return result as Routes<R, B>

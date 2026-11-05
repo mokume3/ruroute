@@ -1,6 +1,6 @@
 # ruroute と routopia の比較
 
-計測日: 2026-11-01 / Node v26.13.0 / Darwin arm64 / routopia 1.2.3
+計測日: 2026-11-06 / Node v26.13.0 / Darwin arm64 / routopia 1.2.3 / TypeScript 7.1.0-beta / vitest 5.1.0 / tsdown 0.23.5
 
 ## 性能(`pnpm bench`)
 
@@ -8,14 +8,35 @@ ruroute はビルド済みの `dist/index.mjs` を計測している(vitest の�
 
 | ケース | ruroute (ops/s) | routopia (ops/s) | 比 (ruroute / routopia) |
 |---|---:|---:|---:|
-| パラメータなし | 32,440,112 | 6,977,911 | 4.65x |
-| パスパラメータ + hash | 9,568,158 | 2,712,357 | 3.53x |
-| クエリ(配列を含む) | 2,707,370 | 1,284,713 | 2.11x |
-| params + query + hash | 1,901,882 | 824,023 | 2.31x |
-| 絶対 URL のキー | 15,219,740 | 2,986,992 | 5.10x |
-| ルート定義(100 ルート) | 72,002 | 21,314 | 3.38x |
+| パラメータなし | 39,584,424 | 7,512,958 | 5.27x |
+| パスパラメータ + hash | 17,554,350 | 3,513,784 | 5.00x |
+| クエリ(配列を含む) | 3,868,883 | 1,622,365 | 2.38x |
+| params + query + hash | 2,946,208 | 1,183,784 | 2.49x |
+| 絶対 URL のキー | 23,906,884 | 4,148,944 | 5.76x |
+| ルート定義(100 ルート) | 124,572 | 30,456 | 4.09x |
 
-計測日ごとに絶対値は 1〜3 割ほど揺れる(2026-10-30 の計測ではパラメータなしが 42,814,084 ops/s だった)。前後比較は同じ日に続けて計測した値どうしで行っている。
+2 回の計測の平均。計測日ごとに絶対値は揺れる。2026-11-01 の計測(パラメータなしで ruroute 32,440,112 / routopia 6,977,911 ops/s)と比べると、ruroute の実行時コードが同じだった `5fb7375` でも、今回は ruroute が 1.2〜1.8 倍、routopia も 1.1〜1.5 倍の値になった。前後比較は同じ日に続けて計測した値どうしで行っている。
+
+### ルートごとの関数の統合とクエリキーの for...in(ruroute)
+
+ルートごとに作っていた呼び出し用とメソッド用の 2 つの関数を 1 つにまとめ、メソッドのプロパティにも同じ関数を付けるようにした変更と、`defineRoutes` の `Object.entries` とクエリの `Object.keys` を `for...in` に変えた変更の前後の比較。変更前は `5fb7375`。変更前と変更後を交互に 2 回ずつ計測した平均。
+
+| ケース | 変更前 (ops/s) | 変更後 (ops/s) | 倍率 |
+|---|---:|---:|---:|
+| パラメータなし | 39,478,711 | 39,584,424 | 1.00x |
+| パスパラメータ + hash | 16,857,724 | 17,554,350 | 1.04x |
+| クエリ(配列を含む) | 3,753,903 | 3,868,883 | 1.03x |
+| params + query + hash | 2,913,416 | 2,946,208 | 1.01x |
+| 絶対 URL のキー | 23,888,393 | 23,906,884 | 1.00x |
+| ルート定義(100 ルート) | 103,177 | 124,572 | 1.21x |
+
+ルートごとのクロージャが 1 つ減り、ルート定義が約 2 割速くなった。クエリを含むケースは、呼び出しごとの `Object.keys` の配列の生成がなくなった分、3% ほど速くなった。それ以外のケースの差は計測のばらつきの範囲。`for...in` はプロトタイプの列挙可能なプロパティも拾うが、query にはプレーンなオブジェクトを渡す前提にしている。
+
+試したが採用しなかった案:
+
+- `type.literal` などの `type.*` の関数を 1 つの共有関数にまとめる: all exports の minified は 8 B 減ったが、usage は 5 B 増え、gzip も増えた。
+- クエリと hash の文字列化を 1 つの関数にまとめる: minified が 5 B 増えた。
+- クエリのキーを先に挿入ソートで並べて append し、`URLSearchParams.sort()` を省く: 出力は同じだが約 2% 遅くなった。
 
 ### クエリキーのソートと type.* の共通化(ruroute)
 
@@ -55,14 +76,16 @@ ruroute はビルド済みの `dist/index.mjs` を計測している(vitest の�
 
 | bundle | unminified (B) | minified (B) | gzip (B) | brotli (B) |
 |---|---:|---:|---:|---:|
-| ruroute (all exports) | 3054 | 1329 | 792 | 701 |
+| ruroute (all exports) | 3010 | 1295 | 777 | 681 |
 | routopia (all exports) | 2207 | 1729 | 725 | 638 |
-| ruroute (usage) | 2543 | 1242 | 733 | 645 |
+| ruroute (usage) | 2499 | 1208 | 713 | 636 |
 | routopia (usage) | 2591 | 1975 | 821 | 725 |
 
 unminified は minify せずにバンドルしたサイズ(gzip / brotli は minified から計算)。ruroute の配布物は minify しておらず JSDoc コメントも残るため、unminified では大きく出る。routopia の配布物はもともと minify 済みで、unminified の値はそれをバンドラが整形し直したもの。そのため unminified どうしの比較は、利用者のバンドルサイズの比較としてはあまり意味がない(利用者側で minify すれば minified の列になる)。
 
-`284872b` では all exports が 1512 / 850 / 752 B、usage が 1327 / 780 / 692 B だった。クエリキーのソートで 9 / 5 / 5 B 増え、`type.*` の共通化(スキーマの `kind` や引数を持たない共有マーカーにした)で all exports が 192 / 63 / 56 B 減った。差し引きで all exports は 183 / 58 / 51 B、usage は 85 / 47 / 47 B 小さくなった。usage は minified・gzip・brotli のいずれも routopia より小さい。all exports の gzip / brotli はまだ routopia の方が小さい。
+`5fb7375` では all exports が 1329 / 792 / 701 B、usage が 1242 / 733 / 645 B だった。ルートごとの関数の統合と `for...in` への置き換えで、all exports は 34 / 15 / 20 B、usage は 34 / 20 / 9 B 小さくなった。usage は minified・gzip・brotli のいずれも routopia より小さい。all exports の gzip / brotli はまだ routopia の方が小さい。
+
+`284872b` では all exports が 1512 / 850 / 752 B、usage が 1327 / 780 / 692 B だった。クエリキーのソートで 9 / 5 / 5 B 増え、`type.*` の共通化(スキーマの `kind` や引数を持たない共有マーカーにした)で all exports が 192 / 63 / 56 B 減った。差し引きで all exports は 183 / 58 / 51 B、usage は 85 / 47 / 47 B 小さくなった。
 
 その前の経緯: `compileUrl` 導入前は all exports が 1356 / 753 / 657 B、usage が 1171 / 675 / 600 B だった。URL の前処理(baseUrl の結合、パスの分割と再利用)、クエリの `%20` 置換と `null` の扱い、空文字 hash の扱いを追加して増え、`String()` の呼び出しとメソッド名の配列を除いて Task 8 時点(all exports 1586 / 884 / 781 B、usage 1401 / 812 / 719 B)から削減した。
 
@@ -71,7 +94,7 @@ unminified は minify せずにバンドルしたサイズ(gzip / brotli は min
 
 ## ツリーシェイキング
 
-`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。今回の出力は `tree-shaking OK (1034 B minified)`。
+`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。今回の出力は `tree-shaking OK (1000 B minified)`(`5fb7375` では 1034 B)。
 
 ## 型チェックの負荷
 
@@ -81,7 +104,11 @@ unminified は minify せずにバンドルしたサイズ(gzip / brotli は min
 |---|---:|---:|---:|
 | `284872b`(推論なし) | 84,070 | 0.041s | 38 MB |
 | 推論あり(最初の実装) | 629,260 | 0.21s | 56 MB |
-| 推論あり(現在) | 227,477 | 0.12s | 60 MB |
+| 推論あり(2026-11-01) | 227,477 | 0.12s | 60 MB |
+| JSDoc 引き継ぎ前(`5810e48`、TypeScript 7.1.0-beta) | 226,241 | 0.062s | 44 MB |
+| JSDoc 引き継ぎ後(`5fb7375`、TypeScript 7.1.0-beta) | 241,437 | 0.070s | 46 MB |
+
+定義に書いた JSDoc を呼び出し側の query のキーと hash に引き継ぐ変更で、同じ TypeScript 7.1.0-beta での比較で instantiation が約 1.5 万(6.7%)増えた。TypeScript 7.0 から 7.1.0-beta への更新自体による差は小さい(7.0.2 では 227,462)。その後のルートごとの関数の統合では、ほぼ変わっていない(241,410)。`pnpm check:type-perf` の上限 300,000 に対しては約 2 割の余裕がある。
 
 増加の大半は、`RouteArgs` や型付き変数を渡したときに、すべてのキーを候補にしたクエリ型を計算する部分で、その中でもキーのソートだった。最小のキーを毎回すべての組み合わせの比較で探す方式(比較回数 n³)から挿入ソート(n²)に変えて、最初の実装の約 1/3 にした。リテラルを渡す呼び出しは 1 回あたり約 1k、`RouteArgs` は約 3k の instantiation になる。省略可能なキーは 1 つごとに候補が倍になるため、4 つを超えた分は `${string}` にまとめている。
 
@@ -90,4 +117,4 @@ unminified は minify せずにバンドルしたサイズ(gzip / brotli は min
 - routopia は可変長パラメータ(`[...slug]` / `[[...slug]]`)に対応している。ruroute は対応していない。
 - 両者ともクエリのキーをソートしてから組み立てる。
 - ruroute の `type.*` は型だけの情報で、実行時はすべて同じ空オブジェクトになる(値の検証はしない)。
-- 性能は1回分の計測値なので、数 % 程度の差は計測のばらつきの範囲に入りうる。
+- 性能は 2 回の計測の平均なので、数 % 程度の差は計測のばらつきの範囲に入りうる。
