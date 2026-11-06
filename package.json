@@ -32,7 +32,7 @@
   },
   "files": [
     "dist",
-    "README.JP.md"
+    "README.ja.md"
   ],
   "scripts": {
     "build": "tsdown",

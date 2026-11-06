@@ -1,3 +1,7 @@
+Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
+
+
+
 # ruroute
 
 TypeScript 向けの、型安全なルート定義と URL 生成ライブラリ。
@@ -23,7 +27,7 @@ import { defineRoutes, type } from 'ruroute'
 const routes = defineRoutes({
   baseUrl: 'https://api.example.com', // 任意
   routes: {
-    '/health': type.empty,
+    '/health': type.route(), // or type.empty
     '/users': type.route({
       get: { query: { page: type.optional(type.number) } },
       post: type.empty,

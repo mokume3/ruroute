@@ -2,7 +2,7 @@
 
 Type-safe route definitions and URL builder for TypeScript.
 
-Japanese README: [README.JP.md](./README.JP.md)
+Japanese README: [README.ja.md](./README.ja.md)
 
 - Define routes once, get typed URL builders for each HTTP method
 - Path params are inferred from the path (`/users/[id]`) and checked at definition time
