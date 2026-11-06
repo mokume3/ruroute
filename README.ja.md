@@ -4,6 +4,15 @@ Language: [🇺🇸](./README.md) [🇯🇵](./README.ja.md)
 
 # ruroute
 
+[![GitHub Release](https://img.shields.io/github/v/release/mokume3/ruroute)](https://github.com/mokume3/ruroute/releases)
+[![license](https://img.shields.io/github/license/mokume3/ruroute)](https://github.com/mokume3/ruroute/blob/main/LICENSE)
+[![minzip](https://badgen.net/bundlephobia/minzip/ruroute)](https://bundlephobia.com/package/ruroute)
+[![dependencies](https://badgen.net/bundlephobia/dependency-count/ruroute)](https://bundlephobia.com/package/ruroute)
+[![CI](https://github.com/mokume3/ruroute/actions/workflows/ci.yml/badge.svg)](https://github.com/mokume3/ruroute/actions/workflows/ci.yml)
+[![Publish](https://github.com/mokume3/ruroute/actions/workflows/publish.yml/badge.svg)](https://github.com/mokume3/ruroute/actions/workflows/publish.yml)
+[![Deploy](https://github.com/mokume3/ruroute/actions/workflows/deploy.yml/badge.svg)](https://github.com/mokume3/ruroute/actions/workflows/deploy.yml)
+[![Coverage](https://mokume3.github.io/ruroute/coverage/badge.svg)](https://mokume3.github.io/ruroute/coverage)
+
 TypeScript 向けの、型安全なルート定義と URL 生成ライブラリ。
 
 English README: [README.md](./README.md)
