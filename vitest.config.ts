@@ -5,6 +5,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.ts'],
       // 型だけのファイル
       exclude: ['src/types.ts'],

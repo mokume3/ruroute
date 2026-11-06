@@ -32,13 +32,14 @@
   },
   "files": [
     "dist",
-    "README.JP.md"
+    "README.ja.md"
   ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "coverage:badge": "node scripts/coverage-badge.ts",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "bench": "tsdown && vitest bench --run --reporter=verbose",
     "size": "tsdown && node scripts/size.ts",
