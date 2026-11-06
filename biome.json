@@ -32,6 +32,16 @@
           "level": "error",
           "options": { "filenameCases": ["kebab-case"] }
         }
+      },
+      "nursery": {
+        "noArrayMethodsOnArguments": "error",
+        "noConstantComparisons": "error",
+        "noErasingOperation": "error",
+        "noNegatedArrayPredicate": "error",
+        "noNumberArgumentOutOfRange": "error",
+        "noSharedBranchCode": "error",
+        "noSubtractionComparison": "error",
+        "noUninvokedArrayCallback": "error"
       }
     },
     "domains": { "test": "recommended" }
