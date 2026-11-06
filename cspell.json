@@ -3,7 +3,18 @@
   "ignorePaths": [],
   "dictionaryDefinitions": [],
   "dictionaries": [],
-  "words": ["bumpp", "Filenaming", "mokume", "routopia", "ruroute", "unminified"],
+  "words": [
+    "bumpp",
+    "Filenaming",
+    "knip",
+    "minzip",
+    "mokume",
+    "myapp",
+    "routopia",
+    "ruroute",
+    "Uninvoked",
+    "unminified"
+  ],
   "ignoreWords": [],
   "import": []
 }
