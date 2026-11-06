@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+
+### Minor Changes
+
+- bf02872: JSDoc written on query keys and on `hash` in route definitions now shows up on the call arguments (`query` / `q` keys, `hash` / `h`). Showing it on `params` keys and on `h` requires TypeScript 7.1 or later.
+
+### Patch Changes
+
+- c88ee74: `defineRoutes` is about 20% faster, building URLs with a query is slightly faster, and the bundle is about 35 B smaller.
+
 ## [0.5.0] - 2026-11-01
 
 ### Breaking Changes
