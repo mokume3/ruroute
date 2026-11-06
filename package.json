@@ -1,7 +1,7 @@
 {
   "name": "ruroute",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Type-safe route definitions and URL builder",
   "author": "mokume3 <mokume.dev@gmail.com>",
   "license": "MIT",
