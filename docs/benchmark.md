@@ -76,12 +76,16 @@ ruroute はビルド済みの `dist/index.mjs` を計測している(vitest の�
 
 | bundle | unminified (B) | minified (B) | gzip (B) | brotli (B) |
 |---|---:|---:|---:|---:|
-| ruroute (all exports) | 3010 | 1295 | 777 | 681 |
+| ruroute (all exports) | 3082 | 1357 | 811 | 714 |
 | routopia (all exports) | 2207 | 1729 | 725 | 638 |
 | ruroute (usage) | 2499 | 1208 | 713 | 636 |
 | routopia (usage) | 2591 | 1975 | 821 | 725 |
 
 unminified は minify せずにバンドルしたサイズ(gzip / brotli は minified から計算)。ruroute の配布物は minify しておらず JSDoc コメントも残るため、unminified では大きく出る。routopia の配布物はもともと minify 済みで、unminified の値はそれをバンドラが整形し直したもの。そのため unminified どうしの比較は、利用者のバンドルサイズの比較としてはあまり意味がない(利用者側で minify すれば minified の列になる)。
+
+ruroute (all exports) の行だけ 2026-11-11 に tsdown 0.23.7 で再計測した値。2026-11-06 の計測(tsdown 0.23.5)では 3010 / 1295 / 777 / 681 B だった。ソースは同じで、`export * as type` をバンドルしたときに生成される名前空間オブジェクトのヘルパが、tsdown / rolldown の更新で 62 B(minified)大きくなった。このヘルパは `type.number` のように使う利用者のバンドルには入らず、usage は変わっていない。以下の差分の説明は 2026-11-06 の値(1295 / 777 / 681 B)を基準にしている。
+
+`pnpm size` は ruroute (usage) の minified が 1,500 B 以上になると失敗する(CI でも実行する)。all exports はバンドラの版で動くため、上限の判定には使わない。
 
 `5fb7375` では all exports が 1329 / 792 / 701 B、usage が 1242 / 733 / 645 B だった。ルートごとの関数の統合と `for...in` への置き換えで、all exports は 34 / 15 / 20 B、usage は 34 / 20 / 9 B 小さくなった。usage は minified・gzip・brotli のいずれも routopia より小さい。all exports の gzip / brotli はまだ routopia の方が小さい。
 

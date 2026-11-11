@@ -10,6 +10,10 @@ const ENTRIES = {
   'routopia (usage)': 'bench/size/routopia-usage.ts',
 }
 const OUT_DIR = 'node_modules/.cache/size'
+// all exports は名前空間オブジェクトのヘルパを含み、バンドラの更新だけで数十 B 動く。
+// このヘルパは利用者のバンドルには入らないため、上限は usage で判定する
+const LIMITED_LABEL = 'ruroute (usage)'
+const MAX_MINIFIED_BYTES = 1500
 
 async function bundle(entry: string, outDir: string, minify: boolean) {
   rmSync(outDir, { recursive: true, force: true })
@@ -29,10 +33,12 @@ async function bundle(entry: string, outDir: string, minify: boolean) {
 }
 
 const rows: string[] = []
+let limitedMinifiedBytes = Number.NaN
 for (const [label, entry] of Object.entries(ENTRIES)) {
   const outDir = join(OUT_DIR, label.replace(/\W+/g, '-'))
   const raw = await bundle(entry, join(outDir, 'raw'), false)
   const code = await bundle(entry, join(outDir, 'min'), true)
+  if (label === LIMITED_LABEL) limitedMinifiedBytes = code.length
   rows.push(
     `| ${label} | ${raw.length} | ${code.length} | ${gzipSync(code, { level: 9 }).length} | ${brotliCompressSync(code).length} |`,
   )
@@ -41,3 +47,12 @@ for (const [label, entry] of Object.entries(ENTRIES)) {
 console.log('| bundle | unminified (B) | minified (B) | gzip (B) | brotli (B) |')
 console.log('|---|---:|---:|---:|---:|')
 for (const row of rows) console.log(row)
+
+// NaN(対象の行が見つからない)も失敗にするため、否定形で比べる
+if (!(limitedMinifiedBytes < MAX_MINIFIED_BYTES)) {
+  console.error(
+    `size failed: ${LIMITED_LABEL} が ${limitedMinifiedBytes} B minified (上限 ${MAX_MINIFIED_BYTES} B 未満)`,
+  )
+  process.exit(1)
+}
+console.log(`size OK (${LIMITED_LABEL}: ${limitedMinifiedBytes} B minified, 上限 ${MAX_MINIFIED_BYTES} B 未満)`)

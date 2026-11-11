@@ -56,7 +56,7 @@ pnpm coverage # カバレッジを計測し、100%を確認
 
 ## パフォーマンス
 
-- 必須: Minifyしたバンドルサイズは 1.5KB 未満にしてください。
+- 必須: Minifyしたバンドルサイズは 1.5KB(1,500 B)未満にしてください。`pnpm size` の `ruroute (usage)` の minified で判定します(超えると失敗します)。`ruroute (all exports)` は参考値です。
 - 必須: `for`/`while`ループと文字列連結のホットパスは保持してください。`map`/`filter`/`reduce`/`join`、または配列スプレッド（`push(...arr)`）は、呼び出しごとのコードでは絶対に使用しないでください。
 - 必須: `Object.entries`/`Object.keys`/spread/`Object.fromEntries`は、初期化時（設定構築時）のみに制限してください。呼び出しごとのコードでは絶対に使用しないでください。
 - 必須: LRU/ルックアップマップには `Object.create(null)` を使用し、頻繁に使用されるパスでは `Map` に「近代化」しないこと。
