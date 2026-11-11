@@ -59,6 +59,17 @@ describe('compileUrl: params', () => {
     expect(compileUrl(undefined, '/[a]/[a]')({ a: 'z' })).toBe('/z/z')
   })
 
+  test('encodeURIComponent が変換しない文字だけの値はそのまま出力する', () => {
+    expect(compileUrl(undefined, '/x/[a]')({ a: "aZ09-_.~!*'()" })).toBe("/x/aZ09-_.~!*'()")
+    expect(compileUrl(undefined, '/x/[a]')({ a: -1.5 })).toBe('/x/-1.5')
+  })
+
+  test('変換が要る文字を含む値は encodeURIComponent と同じ出力にする', () => {
+    expect(compileUrl(undefined, '/x/[a]')({ a: 'あ' })).toBe('/x/%E3%81%82')
+    expect(compileUrl(undefined, '/x/[a]')({ a: 'a+b&c=d?e#f' })).toBe('/x/a%2Bb%26c%3Dd%3Fe%23f')
+    expect(compileUrl(undefined, '/x/[a]')({ a: 1e21 })).toBe('/x/1e%2B21')
+  })
+
   test('params を渡さなければ "undefined" になる(検証しない)', () => {
     expect(compileUrl(undefined, '/users/[id]')()).toBe('/users/undefined')
   })
@@ -118,6 +129,17 @@ describe('compileUrl: hash', () => {
   test('undefined と空文字は # を付けない', () => {
     expect(compileUrl(undefined, '/docs')(undefined, undefined, undefined)).toBe('/docs')
     expect(compileUrl(undefined, '/docs')(undefined, undefined, '')).toBe('/docs')
+  })
+
+  test('変換しない文字だけの hash はそのまま、それ以外はエンコードする', () => {
+    expect(compileUrl(undefined, '/docs')(undefined, undefined, "a-_.~!*'()")).toBe("/docs#a-_.~!*'()")
+    expect(compileUrl(undefined, '/docs')(undefined, undefined, 'あ/b')).toBe('/docs#%E3%81%82%2Fb')
+    expect(compileUrl(undefined, '/docs')(undefined, undefined, Number.NaN)).toBe('/docs#NaN')
+  })
+
+  test('hash に null を渡しても # を付けない(検証しない)', () => {
+    const hash = null as unknown as string
+    expect(compileUrl(undefined, '/docs')(undefined, undefined, hash)).toBe('/docs')
   })
 })
 

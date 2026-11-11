@@ -26,9 +26,9 @@ export function defineRoutes<R extends Record<string, RouteDef>, const B extends
   for (const path in routes) {
     const def = routes[path]
     const url = compileUrl(config.baseUrl, path)
-    const methods = def.kind === 'route' ? def.methods : { get: def }
     const fn: UrlFn & { [M in Method]?: UrlFn } = (a) => url(a?.params ?? a?.p, a?.query ?? a?.q, a?.hash ?? a?.h)
-    for (const method in methods) fn[method as Method] = fn
+    if ('methods' in def) for (const method in def.methods) fn[method as Method] = fn
+    else fn.get = fn
     result[path] = fn
   }
   return result as Routes<R, B>
