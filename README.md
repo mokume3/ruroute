@@ -102,8 +102,8 @@ It fits cases like:
 ### No Parameters
 
 - Use `type.empty` for methods that take no parameters
-- Methods are `get` / `post` / `put` / `delete`. Any other key is a type error
-- Only the defined methods are available as `.get` / `.post` / `.put` / `.delete`
+- Methods are `get` / `post` / `put` / `patch` / `delete` / `head` / `options`. Any other key is a type error
+- Only the defined methods are available as `.get` / `.post` / `.put` / `.patch` / `.delete` / `.head` / `.options`
 - `'/path': type.empty` makes a GET-only route ([Shorthand](#shorthand))
 
 ```ts
@@ -446,7 +446,7 @@ type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 ## 🚫 Unsupported
 
 - Catch-all path params (`[...slug]` / `[[...slug]]`) and optional path params. `[...slug]` gets no special treatment and is handled as a regular path param named `...slug`
-- Methods other than `get` / `post` / `put` / `delete` (such as `patch`)
+- Methods other than `get` / `post` / `put` / `patch` / `delete` / `head` / `options` (such as `trace`)
 - A `mock` method for tests
 - URL parsing and runtime value validation
 - IPv6 literal hosts in keys (`http://[::1]/…`). They work in baseUrl

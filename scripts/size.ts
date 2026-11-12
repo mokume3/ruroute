@@ -28,6 +28,9 @@ async function bundle(entry: string, outDir: string, minify: boolean) {
     fixedExtension: true,
     deps: { alwaysBundle: [/./] },
     logLevel: 'silent',
+    // @__PURE__ などの注釈は利用者の最終バンドルでは役目を終えている(esbuild や terser は消す)。
+    // rolldown は minify しても残すので、コードの大きさだけを測るために出力しない
+    outputOptions: { comments: { annotation: false } },
   })
   return readFileSync(join(outDir, 'index.mjs'))
 }

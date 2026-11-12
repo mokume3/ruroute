@@ -54,9 +54,9 @@ test('置ける位置の制約', () => {
   // @ts-expect-error hash に optional(array)
   type.route({ get: { hash: type.optional(type.array(type.string)) } })
   // @ts-expect-error 未知のメソッド
-  type.route({ patch: type.empty })
+  type.route({ trace: type.empty })
   // @ts-expect-error 既知のメソッドと並んだ未知のメソッド
-  type.route({ get: type.empty, patch: type.empty })
+  type.route({ get: type.empty, trace: type.empty })
   // @ts-expect-error メソッド定義内の未知のキー(params の typo)
   type.route({ get: { query: { a: type.string }, parms: { id: type.number } } })
 

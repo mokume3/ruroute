@@ -18,6 +18,7 @@ interface CallArgs {
 
 type UrlFn = (args?: CallArgs) => string
 
+/* @__NO_SIDE_EFFECTS__ */
 export function defineRoutes<R extends Record<string, RouteDef>, const B extends string | undefined = undefined>(
   config: RoutesConfig<R, B>,
 ): Routes<R, NoInfer<B>> {

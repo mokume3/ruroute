@@ -29,6 +29,22 @@ describe('defineRoutes', () => {
     expect(routes['/delete-only'].delete()).toBe('https://api.example.com/delete-only')
   })
 
+  test('patch / head / options でも呼び出せる', () => {
+    const r = defineRoutes({
+      routes: {
+        '/items/[id]': type.route({
+          patch: { params: { id: type.number } },
+          head: { params: { id: type.number } },
+          options: { params: { id: type.number } },
+        }),
+      },
+    })
+    expect(r['/items/[id]'].patch({ p: { id: 1 } })).toBe('/items/1')
+    expect(r['/items/[id]'].head({ p: { id: 2 } })).toBe('/items/2')
+    expect(r['/items/[id]'].options({ p: { id: 3 } })).toBe('/items/3')
+    expect(Object.keys(r['/items/[id]'])).toEqual(['patch', 'head', 'options'])
+  })
+
   test('短縮形 p / q / h を正式名に揃える', () => {
     expect(routes['/users']({ q: { page: 2 } })).toBe('https://api.example.com/users?page=2')
     expect(routes['/users/[id]']({ p: { id: 1 }, h: 'top' })).toBe('https://api.example.com/users/1#top')

@@ -244,6 +244,21 @@ describe('返り値の URL 型', () => {
     expectTypeOf(methods['/items/[id]'].delete({ p: { id: 1 } })).toEqualTypeOf<`/items/${number}`>()
   })
 
+  test('patch / head / options を定義できる', () => {
+    const methods = defineRoutes({
+      routes: {
+        '/items/[id]': type.route({
+          patch: { params: { id: type.number } },
+          head: { params: { id: type.number } },
+          options: { params: { id: type.number } },
+        }),
+      },
+    })
+    expectTypeOf(methods['/items/[id]'].patch({ p: { id: 1 } })).toEqualTypeOf<`/items/${number}`>()
+    expectTypeOf(methods['/items/[id]'].head({ p: { id: 1 } })).toEqualTypeOf<`/items/${number}`>()
+    expectTypeOf(methods['/items/[id]'].options({ p: { id: 1 } })).toEqualTypeOf<`/items/${number}`>()
+  })
+
   test('hash だけを持つルートの戻り値', () => {
     expectTypeOf(routes['/docs']({ h: 1 })).toEqualTypeOf<`https://api.example.com/docs#${string}`>()
   })

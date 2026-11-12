@@ -96,14 +96,16 @@ ID やスラッグのように変換が要らない値では 1.6〜1.7 倍にな
 
 | bundle | unminified (B) | minified (B) | gzip (B) | brotli (B) |
 |---|---:|---:|---:|---:|
-| ruroute (all exports) | 3255 | 1371 | 838 | 740 |
+| ruroute (all exports) | 3444 | 1355 | 822 | 721 |
 | routopia (all exports) | 2207 | 1729 | 725 | 638 |
-| ruroute (usage) | 2672 | 1222 | 739 | 659 |
+| ruroute (usage) | 2753 | 1222 | 739 | 659 |
 | routopia (usage) | 2591 | 1975 | 821 | 725 |
 
 unminified は minify せずにバンドルしたサイズ(gzip / brotli は minified から計算)。ruroute の配布物は minify しておらず JSDoc コメントも残るため、unminified では大きく出る。routopia の配布物はもともと minify 済みで、unminified の値はそれをバンドラが整形し直したもの。そのため unminified どうしの比較は、利用者のバンドルサイズの比較としてはあまり意味がない(利用者側で minify すれば minified の列になる)。
 
-ruroute の 2 行は 2026-11-11 に tsdown 0.23.7 で再計測した値(エンコードの fast path の導入後)。routopia の 2 行は 2026-11-06 に 1.2.3 で計測した値のまま。
+ruroute の 2 行は 2026-11-13 に tsdown 0.23.7 で再計測した値(`@__NO_SIDE_EFFECTS__` の付与後)。routopia の 2 行は 2026-11-06 に 1.2.3 で計測した値のまま。
+
+2026-11-13 から、`@__PURE__` / `@__NO_SIDE_EFFECTS__` の注釈コメントを出力せずに計測している。注釈は利用者の最終バンドルでは役目を終えていて esbuild や terser は消すが、rolldown は minify しても残す。残したまま測ると usage は 1383 / 795 / 707 B になり、コードは同じなのに注釈だけで 161 B(minified)大きく出る。その前の計測(2026-11-11、注釈を含む)は all exports が 3255 / 1371 / 838 / 740 B、usage が 2672 / 1222 / 739 / 659 B だった。all exports の minified が 16 B 小さいのは、バンドラが正規表現に付ける `@__PURE__` を数えなくなったため。unminified の増加は `dist` に残る注釈コメントの分。
 
 fast path の導入前は all exports が 3082 / 1357 / 811 / 714 B、usage が 2499 / 1208 / 713 / 636 B だった。導入で minified は 14 B、gzip は 26〜27 B、brotli は 23〜26 B 増えた。
 
@@ -122,7 +124,7 @@ fast path の導入前は all exports が 3082 / 1357 / 811 / 714 B、usage が 
 
 ## ツリーシェイキング
 
-`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。今回の出力は `tree-shaking OK (1014 B minified)`(fast path の導入前は 1000 B、`5fb7375` では 1034 B)。
+`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。加えて、ルート定義を export したモジュールから別の値だけを使った場合に、ルート定義と ruroute の実行時コードがバンドルに残らないことも検証する(`defineRoutes` と `type.*` の関数に `@__NO_SIDE_EFFECTS__` を付けている。付ける前は 1161 B 残っていた)。今回の出力は `tree-shaking OK (一部の type.* だけを使う: 1100 B, 使わないルート定義: 38 B minified)`。1100 B には注釈コメント 86 B を含む(注釈を付ける前は 1014 B)(fast path の導入前は 1000 B、`5fb7375` では 1034 B)。
 
 ## 型チェックの負荷
 
@@ -136,7 +138,7 @@ fast path の導入前は all exports が 3082 / 1357 / 811 / 714 B、usage が 
 | JSDoc 引き継ぎ前(`5810e48`、TypeScript 7.1.0-beta) | 226,241 | 0.062s | 44 MB |
 | JSDoc 引き継ぎ後(`5fb7375`、TypeScript 7.1.0-beta) | 241,437 | 0.070s | 46 MB |
 
-定義に書いた JSDoc を呼び出し側の query のキーと hash に引き継ぐ変更で、同じ TypeScript 7.1.0-beta での比較で instantiation が約 1.5 万(6.7%)増えた。TypeScript 7.0 から 7.1.0-beta への更新自体による差は小さい(7.0.2 では 227,462)。その後のルートごとの関数の統合では、ほぼ変わっていない(241,410)。`pnpm check:type-perf` の上限 300,000 に対しては約 2 割の余裕がある。
+定義に書いた JSDoc を呼び出し側の query のキーと hash に引き継ぐ変更で、同じ TypeScript 7.1.0-beta での比較で instantiation が約 1.5 万(6.7%)増えた。TypeScript 7.0 から 7.1.0-beta への更新自体による差は小さい(7.0.2 では 227,462)。その後のルートごとの関数の統合では、ほぼ変わっていない(241,410)。メソッドに `patch` / `head` / `options` を足して 7 つにした後は 248,613(+3.0%)。`pnpm check:type-perf` の上限 300,000 に対しては約 2 割の余裕がある。
 
 増加の大半は、`RouteArgs` や型付き変数を渡したときに、すべてのキーを候補にしたクエリ型を計算する部分で、その中でもキーのソートだった。最小のキーを毎回すべての組み合わせの比較で探す方式(比較回数 n³)から挿入ソート(n²)に変えて、最初の実装の約 1/3 にした。リテラルを渡す呼び出しは 1 回あたり約 1k、`RouteArgs` は約 3k の instantiation になる。省略可能なキーは 1 つごとに候補が倍になるため、4 つを超えた分は `${string}` にまとめている。
 

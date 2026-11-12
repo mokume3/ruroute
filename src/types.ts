@@ -20,7 +20,7 @@ export interface Empty {
   readonly kind: 'empty'
 }
 
-export type Method = 'get' | 'post' | 'put' | 'delete'
+export type Method = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'
 
 type ParamsDef = Record<string, Schema<ParamValue>>
 type QueryDef = Record<string, Schema<QueryValue>>
