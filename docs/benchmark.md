@@ -17,6 +17,26 @@ ruroute はビルド済みの `dist/index.mjs` を計測している(vitest の�
 
 2 回の計測の平均。計測日ごとに絶対値は揺れる。2026-11-01 の計測(パラメータなしで ruroute 32,440,112 / routopia 6,977,911 ops/s)と比べると、ruroute の実行時コードが同じだった `5fb7375` でも、今回は ruroute が 1.2〜1.8 倍、routopia も 1.1〜1.5 倍の値になった。前後比較は同じ日に続けて計測した値どうしで行っている。
 
+### パスパラメータと hash のエンコードの fast path(ruroute)
+
+`encodeURIComponent` が変換しない文字(英数字と `-_.~!*'()`)だけの値は、正規表現で見分けてそのまま連結するようにした。あわせて、`type.empty` のルートで `{ get: def }` を作らずに `get` を直接付けるようにし、`path.startsWith('/')` を `path[0] === '/'` に、hash の `undefined` の判定を `== null` に変えた。
+
+変更前は `8593615`。2026-11-11 に、変更前と変更後の `dist/index.mjs` を同じプロセスで交互に計測した(250 ms × 11 ラウンドの中央値)。`pnpm bench`(vitest)とは計測の枠組みが違うので、絶対値は上の表と一致しない。倍率だけを見ること。
+
+| ケース | 変更前 (ops/s) | 変更後 (ops/s) | 倍率 |
+|---|---:|---:|---:|
+| パスパラメータ(数値)+ hash | 12,658,283 | 21,744,125 | 1.72x |
+| パスパラメータ(安全な文字列 `'my-slug_01'`) | 16,899,857 | 27,555,077 | 1.63x |
+| パスパラメータ(空白を含む `'a b'`) | 15,090,283 | 12,475,947 | 0.83x |
+| パスパラメータ(日本語 `'東京都'`) | 8,399,345 | 7,549,999 | 0.90x |
+| params + query + hash | 2,580,390 | 2,716,961 | 1.05x |
+| ルート定義(`type.empty` × 100) | 183,935 | 197,729 | 1.07x |
+| ルート定義(`type.route` × 100) | 194,510 | 197,478 | 1.02x |
+
+ID やスラッグのように変換が要らない値では 1.6〜1.7 倍になった。変換が要る値では、正規表現の検査の分だけ 1〜2 割遅くなる。ルート定義は、設定オブジェクトを先に作っておき `defineRoutes` だけを計測した値。パラメータなしの呼び出しは 1.00 倍で変わらない。
+
+出力は変更前と同じ。型では渡せない `null` を hash に渡したときだけ、`#null` ではなく hash なしになる。
+
 ### ルートごとの関数の統合とクエリキーの for...in(ruroute)
 
 ルートごとに作っていた呼び出し用とメソッド用の 2 つの関数を 1 つにまとめ、メソッドのプロパティにも同じ関数を付けるようにした変更と、`defineRoutes` の `Object.entries` とクエリの `Object.keys` を `for...in` に変えた変更の前後の比較。変更前は `5fb7375`。変更前と変更後を交互に 2 回ずつ計測した平均。
@@ -76,12 +96,20 @@ ruroute はビルド済みの `dist/index.mjs` を計測している(vitest の�
 
 | bundle | unminified (B) | minified (B) | gzip (B) | brotli (B) |
 |---|---:|---:|---:|---:|
-| ruroute (all exports) | 3010 | 1295 | 777 | 681 |
+| ruroute (all exports) | 3255 | 1371 | 838 | 740 |
 | routopia (all exports) | 2207 | 1729 | 725 | 638 |
-| ruroute (usage) | 2499 | 1208 | 713 | 636 |
+| ruroute (usage) | 2672 | 1222 | 739 | 659 |
 | routopia (usage) | 2591 | 1975 | 821 | 725 |
 
 unminified は minify せずにバンドルしたサイズ(gzip / brotli は minified から計算)。ruroute の配布物は minify しておらず JSDoc コメントも残るため、unminified では大きく出る。routopia の配布物はもともと minify 済みで、unminified の値はそれをバンドラが整形し直したもの。そのため unminified どうしの比較は、利用者のバンドルサイズの比較としてはあまり意味がない(利用者側で minify すれば minified の列になる)。
+
+ruroute の 2 行は 2026-11-11 に tsdown 0.23.7 で再計測した値(エンコードの fast path の導入後)。routopia の 2 行は 2026-11-06 に 1.2.3 で計測した値のまま。
+
+fast path の導入前は all exports が 3082 / 1357 / 811 / 714 B、usage が 2499 / 1208 / 713 / 636 B だった。導入で minified は 14 B、gzip は 26〜27 B、brotli は 23〜26 B 増えた。
+
+2026-11-06 の計測(tsdown 0.23.5)では all exports が 3010 / 1295 / 777 / 681 B だった。ソースは同じで、`export * as type` をバンドルしたときに生成される名前空間オブジェクトのヘルパが、tsdown / rolldown の更新で 62 B(minified)大きくなった。このヘルパは `type.number` のように使う利用者のバンドルには入らず、usage は変わらなかった。以下の差分の説明は 2026-11-06 の値(all exports 1295 / 777 / 681 B、usage 1208 / 713 / 636 B)を基準にしている。
+
+`pnpm size` は ruroute (usage) の minified が 1,500 B 以上になると失敗する(CI でも実行する)。all exports はバンドラの版で動くため、上限の判定には使わない。
 
 `5fb7375` では all exports が 1329 / 792 / 701 B、usage が 1242 / 733 / 645 B だった。ルートごとの関数の統合と `for...in` への置き換えで、all exports は 34 / 15 / 20 B、usage は 34 / 20 / 9 B 小さくなった。usage は minified・gzip・brotli のいずれも routopia より小さい。all exports の gzip / brotli はまだ routopia の方が小さい。
 
@@ -94,7 +122,7 @@ unminified は minify せずにバンドルしたサイズ(gzip / brotli は min
 
 ## ツリーシェイキング
 
-`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。今回の出力は `tree-shaking OK (1000 B minified)`(`5fb7375` では 1034 B)。
+`pnpm check:treeshake` で、配布物から未使用の `type.*` が除去されることを確認できる。`type.empty` / `type.route` / `type.number` だけを使った場合に、`boolean` / `literal` / `union` / `custom` / `array` / `optional` の名前がバンドルに残らないことを検証する(残っていれば名前空間オブジェクトのキーとして出る)。今回の出力は `tree-shaking OK (1014 B minified)`(fast path の導入前は 1000 B、`5fb7375` では 1034 B)。
 
 ## 型チェックの負荷
 

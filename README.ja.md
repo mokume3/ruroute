@@ -467,7 +467,7 @@ type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 
 | バンドル(3ルートを定義して4回呼び出す) | minified | gzip | brotli |
 |---|---:|---:|---:|
-| ruroute | 1,208 B | 713 B | 636 B |
+| ruroute | 1,222 B | 739 B | 659 B |
 | routopia | 1,975 B | 821 B | 725 B |
 
 ## 📝 License

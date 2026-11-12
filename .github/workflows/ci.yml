@@ -33,3 +33,4 @@ jobs:
       - run: pnpm knip
       - run: pnpm check:treeshake
       - run: pnpm check:type-perf
+      - run: pnpm size

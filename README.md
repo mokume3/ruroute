@@ -468,7 +468,7 @@ Compared with [routopia](https://github.com/yKicchan/routopia) 1.2.3 (measured o
 
 | Bundle (define 3 routes and call them 4 times) | minified | gzip | brotli |
 |---|---:|---:|---:|
-| ruroute | 1,208 B | 713 B | 636 B |
+| ruroute | 1,222 B | 739 B | 659 B |
 | routopia | 1,975 B | 821 B | 725 B |
 
 ## 📝 License

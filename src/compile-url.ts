@@ -3,10 +3,17 @@ import type { ParamValue, QueryValue } from './types'
 type UrlBuilder = (params?: Record<string, ParamValue>, query?: Record<string, QueryValue>, hash?: ParamValue) => string
 
 const PARAM = /\[([^\]]+)\]/
+/** Matches any character that encodeURIComponent would change. */
+const UNSAFE_COMPONENT = /[^\w.~!*'()-]/
+
+// ID やスラッグの大半は変換が要らないので、その場合は encodeURIComponent の呼び出しを省く。
+// test は値を自分で文字列化する(String() と同じ結果)
+const encodeComponent = (value: ParamValue) =>
+  UNSAFE_COMPONENT.test(value as string) ? encodeURIComponent(value) : value
 
 /** Prepares the base URL and path, then returns a URL builder. Does not validate values. */
 export function compileUrl(baseUrl: string | undefined, path: string): UrlBuilder {
-  const base = baseUrl?.endsWith('/') && path.startsWith('/') ? baseUrl.slice(0, -1) : (baseUrl ?? '')
+  const base = baseUrl?.endsWith('/') && path[0] === '/' ? baseUrl.slice(0, -1) : (baseUrl ?? '')
 
   if (!path.includes('[')) {
     const url = base + path
@@ -23,8 +30,7 @@ export function compileUrl(baseUrl: string | undefined, path: string): UrlBuilde
     }
     let url = parts[0]
     for (let i = 1; i < parts.length; i += 2) {
-      // encodeURIComponent は値を自分で文字列化する(String() と同じ結果)
-      url += encodeURIComponent(params?.[parts[i]] as ParamValue) + parts[i + 1]
+      url += encodeComponent(params?.[parts[i]] as ParamValue) + parts[i + 1]
     }
     return url + stringifyQuery(query) + stringifyHash(hash)
   }
@@ -50,5 +56,4 @@ function stringifyQuery(query: Record<string, QueryValue> | undefined) {
   return s && `?${s.replaceAll('+', '%20')}`
 }
 
-const stringifyHash = (hash: ParamValue | undefined) =>
-  hash === undefined || hash === '' ? '' : `#${encodeURIComponent(hash)}`
+const stringifyHash = (hash: ParamValue | undefined) => (hash == null || hash === '' ? '' : `#${encodeComponent(hash)}`)
