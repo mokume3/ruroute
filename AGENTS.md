@@ -21,14 +21,15 @@
 ## テスト
 
 - 必須: テストを書いてから実装する（TDD: Red -> Green -> Refactor）。
-- 必須: `pnpm coverage` を実行し、Statements / Branches / Functions / Lines のカバレッジがすべて 100% であることを確認してください。
+- 必須: `pnpm test:coverage` を実行し、Statements / Branches / Functions / Lines のカバレッジがすべて 100% であることを確認してください。
 
 コミット前に必ず以下のコマンドでチェックを実行してください。
 
 ```bash
-pnpm check # 型チェック / biomeチェックを実行
+pnpm typecheck # 型チェックを実行
+pnpm lint # biomeチェックを実行
 pnpm test # テストを実行
-pnpm coverage # カバレッジを計測し、100%を確認
+pnpm test:coverage # カバレッジを計測し、100%を確認
 ```
 
 ## 開発手順
@@ -38,7 +39,7 @@ pnpm coverage # カバレッジを計測し、100%を確認
 
 ### テスト前にビルド
 
-`pnpm build` は `pnpm test` , `pnpm coverage` , `pnpm fix` , `pnpm exec knip` を実行する前に完了している必要があります。  
+`pnpm build` は `pnpm test` , `pnpm test:coverage` , `pnpm lint:fix` , `pnpm knip` を実行する前に完了している必要があります。  
 ソースファイルを変更した後は、必ずテストを実行する前にビルドしてください。
 
 ### 主要コマンド一覧
@@ -49,10 +50,11 @@ pnpm coverage # カバレッジを計測し、100%を確認
 - **ビルド**: `pnpm build`
 - **開発監視**: `pnpm dev` - パッケージを監視
 - **テスト**: `pnpm test` - テストを実行 (Vitest)
-- **カバレッジ**: `pnpm coverage` - カバレッジを計測し、100%であることを確認
-- **型チェック/Lint/フォーマット**: `pnpm check` - tsc / biome check
-- **型チェック/Lint/フォーマット 確定**: `pnpm fix` - tsc / biome check --write
-- **不要処理削除**: `pnpm exec knip` - 未使用のコードを削除するためのツール
+- **カバレッジ**: `pnpm test:coverage` - カバレッジを計測し、100%であることを確認
+- **型チェック**: `pnpm typecheck` - tsc
+- **Lint/フォーマット**: `pnpm lint` - biome check
+- **Lint/フォーマット 確定**: `pnpm lint:fix` - biome check --write
+- **不要処理削除**: `pnpm knip` - 未使用のコードを削除するためのツール
 
 ## パフォーマンス
 
@@ -62,3 +64,12 @@ pnpm coverage # カバレッジを計測し、100%を確認
 - 必須: LRU/ルックアップマップには `Object.create(null)` を使用し、頻繁に使用されるパスでは `Map` に「近代化」しないこと。
 - 必須: 正規表現、バリデーター、定数はモジュールスコープに上げ、クラスごとの関数内で `RegExp` やクロージャを構築しないこと。
 - 必須: `delete` は使用せず、代わりに上書き/再利用すること。遅延初期化を維持する
+
+## コンテキストの節約
+
+- ファイル全体を読む前にまず grep で検索し、必要な部分だけを読む。
+- プロジェクト全体を把握したい場合は、子エージェントを派遣して概要だけを持って帰らせる。
+- diff を見せてくれればいいので、ファイル全体は不要。
+- このセッションで既に決まったことは繰り返さない。
+- タスクを切り替える際は、/compact を使うか新しいセッションを開始することをお勧めします。
+- デフォルトの回答は簡潔に保つ。

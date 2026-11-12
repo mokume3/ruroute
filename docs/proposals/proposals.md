@@ -111,6 +111,8 @@ F の出力一致の主張は統合時に確かめた。乱数で作った 30 �
 
 AGENTS.md は `pnpm check` / `pnpm coverage` / `pnpm fix` を必須としているが、[package.json](../../package.json) にこの名前のスクリプトはない。実際の名前は `typecheck` + `lint` / `test:coverage` / `lint:fix`。どちらかに揃える。
 
+**実装済み。** CI・lefthook・公開ワークフローが `package.json` の名前を使っているので、AGENTS.md を `package.json` に合わせた(`pnpm exec knip` も `pnpm knip` にした)。
+
 ### P3. ベンチマークのケースを増やす
 
 [bench/url.bench.ts](../../bench/url.bench.ts) の「ルート定義(100 ルート)」は、`Object.fromEntries` と `type.route()` による設定オブジェクトの構築も計測に含んでいる。`defineRoutes` 内部の変更(L2、L4、L5)の効果が埋もれるので分ける。
