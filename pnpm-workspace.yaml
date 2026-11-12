@@ -2,17 +2,17 @@ allowBuilds:
   lefthook: false
 
 minimumReleaseAgeExclude:
-  - "@biomejs/biome@2.6.6"
-  - "@biomejs/cli-android-arm64@2.6.6"
-  - "@biomejs/cli-android-x64@2.6.6"
-  - "@biomejs/cli-darwin-arm64@2.6.6"
-  - "@biomejs/cli-darwin-x64@2.6.6"
-  - "@biomejs/cli-linux-arm64-musl@2.6.6"
-  - "@biomejs/cli-linux-arm64@2.6.6"
-  - "@biomejs/cli-linux-x64-musl@2.6.6"
-  - "@biomejs/cli-linux-x64@2.6.6"
-  - "@biomejs/cli-win32-arm64@2.6.6"
-  - "@biomejs/cli-win32-x64@2.6.6"
+  - "@biomejs/biome@2.6.6 || 2.6.7"
+  - "@biomejs/cli-android-arm64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-android-x64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-darwin-arm64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-darwin-x64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-linux-arm64-musl@2.6.6 || 2.6.7"
+  - "@biomejs/cli-linux-arm64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-linux-x64-musl@2.6.6 || 2.6.7"
+  - "@biomejs/cli-linux-x64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-win32-arm64@2.6.6 || 2.6.7"
+  - "@biomejs/cli-win32-x64@2.6.6 || 2.6.7"
   - tsdown@0.23.7
   - knip@6.44.2 || 6.45.1
 
