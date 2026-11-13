@@ -111,6 +111,8 @@ F の出力一致の主張は統合時に確かめた。乱数で作った 30 �
 
 AGENTS.md は `pnpm check` / `pnpm coverage` / `pnpm fix` を必須としているが、[package.json](../../package.json) にこの名前のスクリプトはない。実際の名前は `typecheck` + `lint` / `test:coverage` / `lint:fix`。どちらかに揃える。
 
+**実装済み。** CI・lefthook・公開ワークフローが `package.json` の名前を使っているので、AGENTS.md を `package.json` に合わせた(`pnpm exec knip` も `pnpm knip` にした)。
+
 ### P3. ベンチマークのケースを増やす
 
 [bench/url.bench.ts](../../bench/url.bench.ts) の「ルート定義(100 ルート)」は、`Object.fromEntries` と `type.route()` による設定オブジェクトの構築も計測に含んでいる。`defineRoutes` 内部の変更(L2、L4、L5)の効果が埋もれるので分ける。
@@ -229,6 +231,8 @@ Node は S1 を入れた状態との比較、Chromium はクエリの組み立�
 - F が `dist` を手で書き換えて rolldown 1.3.0 で確認した値。tsdown のビルドでコメントが `dist` に残るかは未確認で、実装時に確かめる。
 - [scripts/check-treeshake.ts](../../scripts/check-treeshake.ts) に「使っていないルート定義が消えること」の検証を足す。
 
+**実装済み。** tsdown のビルドでコメントは `dist` に残り、未使用のルート定義は 1,161 B → 38 B になった。`type.route` はオーバーロードの先頭に付けると消えるので、実装のシグネチャの直前に付けている。rolldown は minify しても注釈コメントを残すため、そのまま測ると usage が 1,222 B → 1,383 B(+161 B)に見える。コードは増えていないので、`pnpm size` は注釈を出力せずに測るようにした(決定 2026-11-13)。usage は 1,222 B のまま。
+
 ### L2. GET だけのルートでメソッド用のオブジェクトを作らない
 
 ```ts
@@ -298,6 +302,8 @@ G が挙げた「baseUrl の末尾スラッシュの判定をループの外で 
 - 3 つの調査すべてが挙げた。G は `patch` だけ、C と F は 3 つ。
 - README の Unsupported に「`get` / `post` / `put` / `delete` 以外のメソッド」とある。意図して絞っているなら見送る。追加するなら README も直す。
 
+**実装済み**(決定 2026-11-13: 3 つとも追加)。instantiation は 248,613 で F の実測どおり。usage のサイズは変わらない。README も直した。
+
 ### F2. 型ユーティリティの追加
 
 `RouteArgs` と同じ形で公開する。実行時コードは変わらない。
@@ -306,6 +312,10 @@ G が挙げた「baseUrl の末尾スラッシュの判定をループの外で 
 - `RouteUrl<T, P, M>`: 返り値の URL 型
 
 短縮形(`p` / `q` / `h`)と省略可能な引数から正しく取り出す設計が要る。
+
+**実装済み。** `RouteArgs` の正式名のキー(`params` / `query` / `hash`)から値を取り出し、`undefined` と `readonly` を外して返す。その部分を定義していないメソッドでは `never`。`RouteUrl` は query や hash を持つメソッドで、すべての呼び出しの返り値を含む型になる。instantiation は 248,613 → 248,705。
+
+実装中に見つけた不具合(修正済み): `readonly` かつ省略可能なキーを持つ型の変数(`{ readonly word: string; readonly page?: number }`)を `query` に渡すと型エラーになっていた。原因は、引数の型が `Q & QueryInput<D>` の `QueryInput<D>` と同一になると、TypeScript が両者を対応づけて `Q` を推論しなくなること。JSDoc を引き継ぐための部分を、キーは同じで値が `unknown` の型に変えて直した。instantiation は 248,705 → 247,216。
 
 ### F3. メソッド間で params を共有する
 
@@ -390,12 +400,13 @@ L1 のアノテーションと組み合わせると、import されなかった�
 決定済み:
 
 - サイズの上限は usage で判定する(P1、2026-11-11)。
+- `patch` / `head` / `options` を追加する(F1、2026-11-13)。
+- サイズは注釈コメントを出力せずに測る(L1、2026-11-13)。
 
 未決:
 
-1. `patch` などのメソッドを追加するか(F1)。README では意図して非対応にしている。
-2. S2 で、孤立サロゲートが `URIError` になる変更を受け入れるか。
-3. L5 と F5 の破壊的変更をどの版で入れるか。
+1. S2 で、孤立サロゲートが `URIError` になる変更を受け入れるか。
+2. L5 と F5 の破壊的変更をどの版で入れるか。
 
 ## 進め方
 

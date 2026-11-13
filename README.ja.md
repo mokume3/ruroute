@@ -102,8 +102,8 @@ routes['/users/[id]']({ params: { id: 123 } })
 ### No Parameters
 
 - パラメータが不要なメソッドには `type.empty` を指定する
-- メソッドは `get` / `post` / `put` / `delete` から選ぶ。それ以外のキーは型エラーになる
-- 定義したメソッドだけが `.get` / `.post` / `.put` / `.delete` として生える
+- メソッドは `get` / `post` / `put` / `patch` / `delete` / `head` / `options` から選ぶ。それ以外のキーは型エラーになる
+- 定義したメソッドだけが `.get` / `.post` / `.put` / `.patch` / `.delete` / `.head` / `.options` として生える
 - `'/path': type.empty` と書くと GET だけのルートになる([Shorthand](#shorthand))
 
 ```ts
@@ -420,17 +420,25 @@ routes['/users']({ query: { page: 2 } })
 
 - `RoutePath<T>`: ルートのパスのユニオン
 - `RouteArgs<T, P, M>`: パス `P`・メソッド `M` の呼び出し引数の型。引数のないメソッドでは `never`
+- `RouteParams<T, P, M>` / `RouteQuery<T, P, M>` / `RouteHash<T, P, M>`: `params` / `query` / `hash` に渡す値の型。省略できる場合でも `undefined` は含まない。その部分を定義していないメソッドでは `never`
+- `RouteUrl<T, P, M>`: 返り値の URL の型。query や hash を持つメソッドでは、どの呼び出しの返り値も代入できる型になる
 - `ValidRoutes<R, B>`: ルート定義の検証。`defineRoutes` をラップする関数の引数に使う
 - ほかに `Schema` / `Infer` / `Empty` / `Route` / `RouteDef` / `Routes` / `RoutesConfig` も公開している
 
 ```ts
-import type { RouteArgs, RoutePath } from 'ruroute'
+import type { RouteArgs, RouteParams, RoutePath, RouteUrl } from 'ruroute'
 
 type Path = RoutePath<typeof routes>
 // => '/users' | '/users/[id]'
 
 type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 // => { params: { id: number } } | { p: { id: number } } など、呼び出し引数の型
+
+type Params = RouteParams<typeof routes, '/users/[id]', 'get'>
+// => { id: number }
+
+type Url = RouteUrl<typeof routes, '/users/[id]', 'get'>
+// => `/users/${number}`
 ```
 
 ### URL Encoding
@@ -445,7 +453,7 @@ type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 ## 🚫 Unsupported
 
 - 可変長パスパラメータ(`[...slug]` / `[[...slug]]`)と、省略できるパスパラメータ。`[...slug]` は特別扱いされず、`...slug` という名前の通常のパスパラメータとして扱われる
-- `get` / `post` / `put` / `delete` 以外のメソッド(`patch` など)
+- `get` / `post` / `put` / `patch` / `delete` / `head` / `options` 以外のメソッド(`trace` など)
 - テスト用の `mock` メソッド
 - URL のパースと、実行時の値の検証
 - キーに IPv6 リテラルのホストを書くこと(`http://[::1]/…`)。baseUrl に書けば動く

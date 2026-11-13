@@ -102,8 +102,8 @@ It fits cases like:
 ### No Parameters
 
 - Use `type.empty` for methods that take no parameters
-- Methods are `get` / `post` / `put` / `delete`. Any other key is a type error
-- Only the defined methods are available as `.get` / `.post` / `.put` / `.delete`
+- Methods are `get` / `post` / `put` / `patch` / `delete` / `head` / `options`. Any other key is a type error
+- Only the defined methods are available as `.get` / `.post` / `.put` / `.patch` / `.delete` / `.head` / `.options`
 - `'/path': type.empty` makes a GET-only route ([Shorthand](#shorthand))
 
 ```ts
@@ -421,17 +421,25 @@ routes['/users']({ query: { page: 2 } })
 
 - `RoutePath<T>`: a union of the route paths
 - `RouteArgs<T, P, M>`: the call argument type for path `P` and method `M`. `never` for methods with no arguments
+- `RouteParams<T, P, M>` / `RouteQuery<T, P, M>` / `RouteHash<T, P, M>`: the type of the value passed as `params` / `query` / `hash`. `undefined` is not included even when the value can be omitted. `never` for methods that do not define that part
+- `RouteUrl<T, P, M>`: the type of the returned URL. For methods with a query or hash, the return value of any call is assignable to it
 - `ValidRoutes<R, B>`: validates route definitions. Use it for the argument of a function that wraps `defineRoutes`
 - `Schema` / `Infer` / `Empty` / `Route` / `RouteDef` / `Routes` / `RoutesConfig` are also exported
 
 ```ts
-import type { RouteArgs, RoutePath } from 'ruroute'
+import type { RouteArgs, RouteParams, RoutePath, RouteUrl } from 'ruroute'
 
 type Path = RoutePath<typeof routes>
 // => '/users' | '/users/[id]'
 
 type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 // => the call argument type, such as { params: { id: number } } | { p: { id: number } }
+
+type Params = RouteParams<typeof routes, '/users/[id]', 'get'>
+// => { id: number }
+
+type Url = RouteUrl<typeof routes, '/users/[id]', 'get'>
+// => `/users/${number}`
 ```
 
 ### URL Encoding
@@ -446,7 +454,7 @@ type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 ## 🚫 Unsupported
 
 - Catch-all path params (`[...slug]` / `[[...slug]]`) and optional path params. `[...slug]` gets no special treatment and is handled as a regular path param named `...slug`
-- Methods other than `get` / `post` / `put` / `delete` (such as `patch`)
+- Methods other than `get` / `post` / `put` / `patch` / `delete` / `head` / `options` (such as `trace`)
 - A `mock` method for tests
 - URL parsing and runtime value validation
 - IPv6 literal hosts in keys (`http://[::1]/…`). They work in baseUrl

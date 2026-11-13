@@ -20,7 +20,7 @@ export interface Empty {
   readonly kind: 'empty'
 }
 
-export type Method = 'get' | 'post' | 'put' | 'delete'
+export type Method = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'
 
 type ParamsDef = Record<string, Schema<ParamValue>>
 type QueryDef = Record<string, Schema<QueryValue>>
@@ -78,10 +78,17 @@ type ParamsPart<D> = D extends { readonly params: infer P extends ParamsDef }
 type QueryInput<D> = D extends { readonly query: infer Q extends QueryDef } ? QueryArgs<Q> : never
 
 /**
- * Q inferred from the call, with keys outside the definition rejected.
- * QueryInput<D> does not narrow Q, but without it the keys point only at the call site and lose the definition's JSDoc.
+ * Adds no type, only the JSDoc of the query definition's keys.
+ * It must not be QueryInput<D> itself: when the argument's type is identical to an intersection member,
+ * TypeScript matches the two and infers nothing for Q.
  */
-type ExactQuery<D, Q> = Q & QueryInput<D> & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
+type QueryKeyDocs<D> = { [K in keyof QueryInput<D>]: unknown }
+
+/**
+ * Q inferred from the call, with keys outside the definition rejected.
+ * Without QueryKeyDocs<D> the keys point only at the call site and lose the definition's JSDoc.
+ */
+type ExactQuery<D, Q> = Q & QueryKeyDocs<D> & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
 
 type QueryPart<D, Q> = D extends { readonly query: QueryDef }
   ? Alias<'query', 'q', ExactQuery<D, Q>, HasRequiredKey<QueryInput<D>>>
@@ -339,5 +346,37 @@ export type RoutePath<T> = keyof T & string
 export type RouteArgs<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
   ? T[P][M] extends (...args: infer A) => string
     ? Exclude<A[0], undefined>
+    : never
+  : never
+
+/** Flattens intersections and drops readonly, so the result can annotate a variable passed back to the call. */
+type Writable<T> = { -readonly [K in keyof T]: T[K] }
+
+/** The value of key K in call arguments A, without undefined. Returns never when A has no such key. */
+type ArgValue<A, K extends string> = [A] extends [never]
+  ? never
+  : K extends keyof A
+    ? Writable<Exclude<A[K], undefined>>
+    : never
+
+/** The params value for path P and method M. Returns never for methods with no params; distributes over unions of M. */
+export type RouteParams<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'params'>
+  : never
+
+/** The query value for path P and method M. Returns never for methods with no query; distributes over unions of M. */
+export type RouteQuery<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'query'>
+  : never
+
+/** The hash value for path P and method M. Returns never for methods with no hash; distributes over unions of M. */
+export type RouteHash<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'hash'>
+  : never
+
+/** The URL type that path P and method M return, covering every call; distributes over unions of M. */
+export type RouteUrl<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? T[P][M] extends (...args: infer _Args) => infer Url
+    ? Url
     : never
   : never
