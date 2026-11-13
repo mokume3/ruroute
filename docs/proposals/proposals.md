@@ -124,6 +124,8 @@ AGENTS.md は `pnpm check` / `pnpm coverage` / `pnpm fix` を必須としてい�
 
 前後比較は同じ環境で交互に複数回行い、数 % の差だけでは採用を決めない。
 
+**実装済み。** 既存の routopia との比較([bench/url.bench.ts](../../bench/url.bench.ts))は過去の値と比べられるようにそのまま残し、ruroute だけのケースを [bench/internals.bench.ts](../../bench/internals.bench.ts) に分けた。保持メモリは vitest では測れないので、[scripts/bench-memory.ts](../../scripts/bench-memory.ts)(`pnpm bench:memory`)にした。1 ルートあたり約 290〜350 B、パスパラメータのあるルートは初回の呼び出しで約 130 B 増える。空のクエリはクエリなしの 0.62 倍で、[S3](#s3-空のクエリで-urlsearchparams-を作らない) の対象になる。計測結果は [docs/benchmark.md](../benchmark.md) にある。
+
 ## S. 高速化
 
 ### S1. パスパラメータと hash のエンコードを省く fast path
