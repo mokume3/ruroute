@@ -6,9 +6,13 @@ export type {
   Route,
   RouteArgs,
   RouteDef,
+  RouteHash,
+  RouteParams,
   RoutePath,
+  RouteQuery,
   Routes,
   RoutesConfig,
+  RouteUrl,
   Schema,
   ValidRoutes,
 } from './types'

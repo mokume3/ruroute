@@ -313,6 +313,10 @@ G が挙げた「baseUrl の末尾スラッシュの判定をループの外で 
 
 短縮形(`p` / `q` / `h`)と省略可能な引数から正しく取り出す設計が要る。
 
+**実装済み。** `RouteArgs` の正式名のキー(`params` / `query` / `hash`)から値を取り出し、`undefined` と `readonly` を外して返す。その部分を定義していないメソッドでは `never`。`RouteUrl` は query や hash を持つメソッドで、すべての呼び出しの返り値を含む型になる。instantiation は 248,613 → 248,705。
+
+実装中に見つけた既存の挙動: `readonly` かつ省略可能なキーを持つ型の変数(`{ readonly word: string; readonly page?: number }`)を `query` に渡すと型エラーになる。`readonly` を外した型、必須キーだけの `readonly`、`as const` の値は通る。`RouteQuery` が `readonly` を外すのはこのため。
+
 ### F3. メソッド間で params を共有する
 
 いまはパスパラメータをすべてのメソッドに書く必要がある。ルートの階層で 1 回だけ書けるようにする。

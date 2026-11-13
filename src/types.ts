@@ -341,3 +341,35 @@ export type RouteArgs<T, P extends RoutePath<T>, M extends keyof T[P] & Method> 
     ? Exclude<A[0], undefined>
     : never
   : never
+
+/** Flattens intersections and drops readonly, so the result can annotate a variable passed back to the call. */
+type Writable<T> = { -readonly [K in keyof T]: T[K] }
+
+/** The value of key K in call arguments A, without undefined. Returns never when A has no such key. */
+type ArgValue<A, K extends string> = [A] extends [never]
+  ? never
+  : K extends keyof A
+    ? Writable<Exclude<A[K], undefined>>
+    : never
+
+/** The params value for path P and method M. Returns never for methods with no params; distributes over unions of M. */
+export type RouteParams<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'params'>
+  : never
+
+/** The query value for path P and method M. Returns never for methods with no query; distributes over unions of M. */
+export type RouteQuery<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'query'>
+  : never
+
+/** The hash value for path P and method M. Returns never for methods with no hash; distributes over unions of M. */
+export type RouteHash<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? ArgValue<RouteArgs<T, P, M>, 'hash'>
+  : never
+
+/** The URL type that path P and method M return, covering every call; distributes over unions of M. */
+export type RouteUrl<T, P extends RoutePath<T>, M extends keyof T[P] & Method> = M extends M
+  ? T[P][M] extends (...args: infer _Args) => infer Url
+    ? Url
+    : never
+  : never

@@ -421,17 +421,25 @@ routes['/users']({ query: { page: 2 } })
 
 - `RoutePath<T>`: a union of the route paths
 - `RouteArgs<T, P, M>`: the call argument type for path `P` and method `M`. `never` for methods with no arguments
+- `RouteParams<T, P, M>` / `RouteQuery<T, P, M>` / `RouteHash<T, P, M>`: the type of the value passed as `params` / `query` / `hash`. `undefined` is not included even when the value can be omitted. `never` for methods that do not define that part
+- `RouteUrl<T, P, M>`: the type of the returned URL. For methods with a query or hash, the return value of any call is assignable to it
 - `ValidRoutes<R, B>`: validates route definitions. Use it for the argument of a function that wraps `defineRoutes`
 - `Schema` / `Infer` / `Empty` / `Route` / `RouteDef` / `Routes` / `RoutesConfig` are also exported
 
 ```ts
-import type { RouteArgs, RoutePath } from 'ruroute'
+import type { RouteArgs, RouteParams, RoutePath, RouteUrl } from 'ruroute'
 
 type Path = RoutePath<typeof routes>
 // => '/users' | '/users/[id]'
 
 type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 // => the call argument type, such as { params: { id: number } } | { p: { id: number } }
+
+type Params = RouteParams<typeof routes, '/users/[id]', 'get'>
+// => { id: number }
+
+type Url = RouteUrl<typeof routes, '/users/[id]', 'get'>
+// => `/users/${number}`
 ```
 
 ### URL Encoding

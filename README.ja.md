@@ -420,17 +420,25 @@ routes['/users']({ query: { page: 2 } })
 
 - `RoutePath<T>`: ルートのパスのユニオン
 - `RouteArgs<T, P, M>`: パス `P`・メソッド `M` の呼び出し引数の型。引数のないメソッドでは `never`
+- `RouteParams<T, P, M>` / `RouteQuery<T, P, M>` / `RouteHash<T, P, M>`: `params` / `query` / `hash` に渡す値の型。省略できる場合でも `undefined` は含まない。その部分を定義していないメソッドでは `never`
+- `RouteUrl<T, P, M>`: 返り値の URL の型。query や hash を持つメソッドでは、どの呼び出しの返り値も代入できる型になる
 - `ValidRoutes<R, B>`: ルート定義の検証。`defineRoutes` をラップする関数の引数に使う
 - ほかに `Schema` / `Infer` / `Empty` / `Route` / `RouteDef` / `Routes` / `RoutesConfig` も公開している
 
 ```ts
-import type { RouteArgs, RoutePath } from 'ruroute'
+import type { RouteArgs, RouteParams, RoutePath, RouteUrl } from 'ruroute'
 
 type Path = RoutePath<typeof routes>
 // => '/users' | '/users/[id]'
 
 type Args = RouteArgs<typeof routes, '/users/[id]', 'get'>
 // => { params: { id: number } } | { p: { id: number } } など、呼び出し引数の型
+
+type Params = RouteParams<typeof routes, '/users/[id]', 'get'>
+// => { id: number }
+
+type Url = RouteUrl<typeof routes, '/users/[id]', 'get'>
+// => `/users/${number}`
 ```
 
 ### URL Encoding
