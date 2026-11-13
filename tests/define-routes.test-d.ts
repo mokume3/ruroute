@@ -259,6 +259,26 @@ describe('返り値の URL 型', () => {
     expectTypeOf(methods['/items/[id]'].options({ p: { id: 1 } })).toEqualTypeOf<`/items/${number}`>()
   })
 
+  test('readonly で省略可能なキーを持つ型の変数を query に渡せる', () => {
+    const search = defineRoutes({
+      routes: {
+        '/search': type.route({ get: { query: { word: type.string, page: type.optional(type.number) } } }),
+        '/list': type.route({ get: { query: { page: type.optional(type.number) } } }),
+      },
+    })
+    const writableQuery: { word: string; page?: number } = { word: 'a' }
+    const readonlyQuery: { readonly word: string; readonly page?: number } = { word: 'a' }
+    const fromWritable = search['/search']({ query: writableQuery })
+    expectTypeOf(search['/search']({ query: readonlyQuery })).toEqualTypeOf<typeof fromWritable>()
+    expectTypeOf(search['/search']({ q: readonlyQuery })).toEqualTypeOf<typeof fromWritable>()
+    expectTypeOf(search['/search'].get({ query: readonlyQuery })).toEqualTypeOf<typeof fromWritable>()
+
+    const readonlyOptionalQuery: { readonly page?: number } = {}
+    expectTypeOf(search['/list']({ query: readonlyOptionalQuery })).toEqualTypeOf<'/list' | `/list?page=${number}`>()
+    // @ts-expect-error 必須キーの不足
+    search['/search']({ query: readonlyOptionalQuery })
+  })
+
   test('hash だけを持つルートの戻り値', () => {
     expectTypeOf(routes['/docs']({ h: 1 })).toEqualTypeOf<`https://api.example.com/docs#${string}`>()
   })

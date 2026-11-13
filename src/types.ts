@@ -78,10 +78,17 @@ type ParamsPart<D> = D extends { readonly params: infer P extends ParamsDef }
 type QueryInput<D> = D extends { readonly query: infer Q extends QueryDef } ? QueryArgs<Q> : never
 
 /**
- * Q inferred from the call, with keys outside the definition rejected.
- * QueryInput<D> does not narrow Q, but without it the keys point only at the call site and lose the definition's JSDoc.
+ * Adds no type, only the JSDoc of the query definition's keys.
+ * It must not be QueryInput<D> itself: when the argument's type is identical to an intersection member,
+ * TypeScript matches the two and infers nothing for Q.
  */
-type ExactQuery<D, Q> = Q & QueryInput<D> & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
+type QueryKeyDocs<D> = { [K in keyof QueryInput<D>]: unknown }
+
+/**
+ * Q inferred from the call, with keys outside the definition rejected.
+ * Without QueryKeyDocs<D> the keys point only at the call site and lose the definition's JSDoc.
+ */
+type ExactQuery<D, Q> = Q & QueryKeyDocs<D> & { [K in Exclude<keyof Q, keyof QueryInput<D>>]: never }
 
 type QueryPart<D, Q> = D extends { readonly query: QueryDef }
   ? Alias<'query', 'q', ExactQuery<D, Q>, HasRequiredKey<QueryInput<D>>>
