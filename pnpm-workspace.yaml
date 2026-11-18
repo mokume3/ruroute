@@ -1,20 +1,11 @@
 allowBuilds:
   lefthook: false
 
-minimumReleaseAgeExclude:
-  - "@biomejs/biome@2.6.6 || 2.6.7"
-  - "@biomejs/cli-android-arm64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-android-x64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-darwin-arm64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-darwin-x64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-linux-arm64-musl@2.6.6 || 2.6.7"
-  - "@biomejs/cli-linux-arm64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-linux-x64-musl@2.6.6 || 2.6.7"
-  - "@biomejs/cli-linux-x64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-win32-arm64@2.6.6 || 2.6.7"
-  - "@biomejs/cli-win32-x64@2.6.6 || 2.6.7"
-  - tsdown@0.23.7
-  - knip@6.44.2 || 6.45.1
+lockfile:
+  format: v13
 
-overrides:
-  rolldown-plugin-dts: 0.29.0
+minimumReleaseAgeExclude:
+  - "@vitest/coverage-v8@5.1.1"
+  - "@vitest/mocker@5.1.1"
+  - "@vitest/spy@5.1.1"
+  - vitest@5.1.1

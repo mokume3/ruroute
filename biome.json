@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -36,9 +36,11 @@
       "nursery": {
         "noArrayMethodsOnArguments": "error",
         "noAsyncPromiseFinally": "error",
+        "noConfusingArraySplice": "error",
         "noConstantComparisons": "error",
         "noDuplicateTypeConstituents": "error",
         "noErasingOperation": "error",
+        "noMisusedSpread": "error",
         "noNegatedArrayPredicate": "error",
         "noNewArray": "error",
         "noNumberArgumentOutOfRange": "error",
@@ -50,7 +52,8 @@
         "noUselessSpread": "error",
         "useConsistentTupleLabels": "error",
         "useGlobalRegexInMatchAll": "error",
-        "useGlobalRegexInReplaceAll": "error"
+        "useGlobalRegexInReplaceAll": "error",
+        "usePackageJsonValidLicense": "error"
       }
     },
     "domains": { "test": "recommended" }
