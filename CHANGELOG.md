@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- d5731ee: - Added the `patch`, `head`, and `options` methods to `type.route()`.
+  - Added the `RouteParams`, `RouteQuery`, `RouteHash`, and `RouteUrl` type utilities.
+  - Fixed a type error when passing a variable whose type has `readonly` optional keys (identical to the query definition) as `query`.
+  - `defineRoutes` and the `type.*` functions are now marked with `@__NO_SIDE_EFFECTS__`, so bundlers can drop route definitions that are never used.
+
+### Patch Changes
+
+- 26fa55b: Building URLs is about 1.6x faster when path params and hashes contain only characters that need no encoding (such as numeric IDs and slugs). Values that need encoding are 10–20% slower, and the bundle is 14 B larger. Defining `type.empty` routes is slightly faster.
+
 ## 0.6.0
 
 ### Minor Changes
