@@ -46,6 +46,7 @@
     "size": "tsdown && node scripts/size.ts",
     "check:treeshake": "tsdown && node scripts/check-treeshake.ts",
     "check:type-perf": "node scripts/check-type-perf.ts",
+    "measure:type-perf": "node scripts/check-type-perf.ts --measure",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset git-tag && git push --follow-tags",
