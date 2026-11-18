@@ -7,13 +7,17 @@
     "bumpp",
     "Filenaming",
     "knip",
+    "lefthook",
     "minzip",
     "mokume",
     "myapp",
+    "parms",
     "routopia",
     "ruroute",
     "Uninvoked",
-    "unminified"
+    "unminified",
+    "Verdana",
+    "vitest"
   ],
   "ignoreWords": [],
   "import": []
